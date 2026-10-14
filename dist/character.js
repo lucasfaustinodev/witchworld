@@ -173,20 +173,30 @@ export function createWitch({ hint }) {
     armGroup.attach(upperArm);armGroup.attach(lowerArm);armGroup.attach(hand);
     legGroup.attach(upperLeg);legGroup.attach(lowerLeg);legGroup.attach(shoe);
     const initial=V(side*.13,.052,.02).applyAxisAngle(V(0,1,0),root.rotation.y).add(root.position);
-    limbs.push({side,upperArm,lowerArm,hand,upperLeg,lowerLeg,shoe,foot:initial.clone(),from:initial.clone(),to:initial.clone(),prevU:1,swing:false});
+    limbs.push({side,upperArm,lowerArm,hand,upperLeg,lowerLeg,shoe,foot:initial.clone(),from:initial.clone(),to:initial.clone(),prevU:1,swing:false,
+      swingU:0,settling:false,footYaw:root.rotation.y,fromYaw:root.rotation.y,toYaw:root.rotation.y,local:V(),hip:V(),joint:V(),ankle:V(),shoulder:V(),elbow:V(),wrist:V()});
   }
+  // A waist pivot separates shoulder counterrotation from pelvis/cloth motion.
+  // Reparenting keeps every rest-space position and the original geometry.
+  const upperBody=new THREE.Group();upperBody.name='upperBodyPivot';upperBody.position.y=.66;
+  const upperParts=body.children.filter(o=>o!==skirt&&o!==hem&&o.name!=='belt'&&!(o.position.y>.63&&o.position.y<.67));
+  body.add(upperBody);for(const o of upperParts){upperBody.add(o);o.position.y-=.66;}
   const up=V(0,1,0);
+  const upperLocal=V(),upperWorld=V();
+  function upperPoint(v){upperLocal.copy(v);upperLocal.y-=.66;upperWorld.copy(upperLocal).applyEuler(upperBody.rotation);upperWorld.y+=.66;return v.copy(upperWorld).applyEuler(body.rotation).add(body.position);}
+
+  const linkDirection=V(),kneeDirection=V(),kneePole=V();
   function link(object,a,b,radius){
     object.position.copy(a).add(b).multiplyScalar(.5);
-    object.quaternion.setFromUnitVectors(up,b.clone().sub(a).normalize());
+    object.quaternion.setFromUnitVectors(up,linkDirection.copy(b).sub(a).normalize());
     // Contour length follows the approved endpoints, with soft overlap around joints.
     object.scale.set(1,a.distanceTo(b)/(1+radius*2),1);
   }
-  function knee(hip,foot){
-    const direction=foot.clone().sub(hip),distance=Math.min(direction.length(),.528),length=.265;
+  function knee(hip,foot,out){
+    const direction=kneeDirection.copy(foot).sub(hip),distance=Math.min(direction.length(),.528),length=.265;
     direction.normalize();
-    const pole=V(0,0,1).addScaledVector(direction,-direction.z).normalize();
-    return hip.clone().addScaledVector(direction,distance*.5).addScaledVector(pole,Math.sqrt(Math.max(0,length*length-distance*distance*.25)));
+    const pole=kneePole.set(0,0,1).addScaledVector(direction,-direction.z).normalize();
+    return out.copy(hip).addScaledVector(direction,distance*.5).addScaledVector(pole,Math.sqrt(Math.max(0,length*length-distance*distance*.25)));
   }
   const keys=new Set(),velocity=V(),center=V(0,.255,.3);
   const cameraYaw=Math.atan2(10,20); // Basis matches the frozen camera, never changes it.
@@ -194,7 +204,28 @@ export function createWitch({ hint }) {
   const screenUp=V(-Math.sin(cameraYaw),0,-Math.cos(cameraYaw));
   let state='idle',clock=0,distance=0,walkWeight=0,meditation=0,transitionTime=0;
   let transitionStart=0,transitionTarget=0,centeringFrom=root.position.clone(),centeringYaw=root.rotation.y;
-  let stoppedElapsed=0;
+  let stoppedElapsed=0,briskWalk=false;
+  // Reused work vectors and exact critically damped springs: no frame-rate-dependent lerp.
+  const requested=V(),displacement=V(),previous=V(),fromCenter=V(),attempted=V(),normal=V(),oldVelocity=V(),forward=V(),right=V(),neutral=V(),seat=V();
+  const spring=()=>({value:0,velocity:0});
+  const pitch=spring(),roll=spring(),twist=spring(),hatPitch=spring(),hatRoll=spring(),clothLag=spring(),clothSide=spring(),hairLag=spring(),weightShift=spring(),shoulderSpring=spring();
+  function follow(s,target,frequency,dt){
+    const offset=s.value-target,j=s.velocity+frequency*offset,e=Math.exp(-frequency*dt);
+    s.value=target+(offset+j*dt)*e;s.velocity=(s.velocity-frequency*j*dt)*e;return s.value;
+  }
+  const angleDelta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+  let stride=.64,gaitCycle=0,fast=0;const swingFraction=.42,groundAnkle=.052;
+  let turnRate=0,forwardAcceleration=0,normalClock=0,previousDrape=0,normalDirty=false,lastStep=1;
+  // Fold weights are immutable; no atan2/pow in the clothing frame loop.
+  const skirtWeights=Array.from({length:skirt.geometry.attributes.position.count},(_,i)=>{
+    const x=skirtBase[i*3],y=skirtBase[i*3+1],z=skirtBase[i*3+2],t=THREE.MathUtils.clamp((.63-y)/.41,0,1),a=Math.atan2(z,x);
+    return {t,fold:.63-.235*Math.pow(t,.85)+.012*Math.cos(a*2)*Math.sin(t*Math.PI),spread:smooth(t)};
+  });
+  const capeWeights=Array.from({length:capeGeo.attributes.position.count},(_,i)=>(.93-capeBase[i*3+1])/.55);
+  function startStep(l,target,settling=false){
+    l.from.copy(l.foot);l.to.copy(target);l.to.y=root.position.y+groundAnkle;
+    l.fromYaw=l.footYaw;l.toYaw=root.rotation.y;l.swingU=0;l.swing=true;l.settling=settling;
+  }
   let astralController=null,astralPose={locked:false,meditation:0};
   let meditationExitHandler=null,interaction=null,externalFocus={locked:false,weight:0,yaw:root.rotation.y};
   function standUp(){
@@ -202,6 +233,7 @@ export function createWitch({ hint }) {
     state='rising';transitionTime=0;transitionStart=meditation;transitionTarget=0;keys.clear();
   }
   function onKey(event){
+    briskWalk=event.shiftKey;
     if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight','KeyE','KeyV'].includes(event.code))event.preventDefault();
     keys.add(event.code);
     if(event.code==='KeyV'){if(!event.repeat)astralController?.toggle();return;}
@@ -215,8 +247,8 @@ export function createWitch({ hint }) {
       centeringFrom.copy(root.position);centeringYaw=root.rotation.y;velocity.set(0,0,0);keys.clear();
     }else if((state==='idle'||state==='walk'||state==='stop')&&interaction?.canStart(root.position)){interaction.start();}
   }
-  const clearInput=()=>keys.clear();
-  addEventListener('keydown',onKey);addEventListener('keyup',event=>keys.delete(event.code));
+  const clearInput=()=>{keys.clear();briskWalk=false;};
+  addEventListener('keydown',onKey);addEventListener('keyup',event=>{keys.delete(event.code);briskWalk=event.shiftKey;});
   addEventListener('blur',clearInput);document.addEventListener('visibilitychange',clearInput);
 
   function update(dt){
@@ -235,103 +267,148 @@ export function createWitch({ hint }) {
       }
       if(progress===1){state=transitionTarget===1?'meditate':'idle';meditation=transitionTarget;stoppedElapsed=0;}
     }
-    let speed=0;
+    let speed=0;turnRate=0;forwardAcceleration=0;
     if(!locked){
       const horizontal=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
       const vertical=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
-      const requested=screenRight.clone().multiplyScalar(horizontal).addScaledVector(screenUp,vertical);
-      if(requested.lengthSq()>0)requested.normalize().multiplyScalar(1.10);
-      const k=requested.lengthSq()?10:14;
+      requested.copy(screenRight).multiplyScalar(horizontal).addScaledVector(screenUp,vertical);
+      if(requested.lengthSq()>0)requested.normalize().multiplyScalar(briskWalk?1.76:1.10);
+      const k=requested.lengthSq()?(velocity.dot(requested)<0?14:10):9;
       const decay=Math.exp(-k*dt);
-      const displacement=requested.clone().multiplyScalar(dt).addScaledVector(velocity.clone().sub(requested),(1-decay)/k);
+      oldVelocity.copy(velocity);
+      displacement.copy(requested).multiplyScalar(dt).addScaledVector(normal.copy(velocity).sub(requested),(1-decay)/k);
       velocity.lerp(requested,1-decay);
       if(velocity.length()<.003)velocity.set(0,0,0);
-      const previous=root.position.clone();root.position.add(displacement);
-      const fromCenter=root.position.clone().sub(center);fromCenter.y=0;
+      previous.copy(root.position);root.position.add(displacement);
+      fromCenter.copy(root.position).sub(center);fromCenter.y=0;
       if(fromCenter.length()>1.36){
-        if(interaction?.projectWalk){const attempted=root.position.clone(),projected=interaction.projectWalk(attempted);root.position.copy(projected);const normal=attempted.sub(projected).normalize(),outward=velocity.dot(normal);if(outward>0)velocity.addScaledVector(normal,-outward);}
-        else {fromCenter.setLength(1.36);root.position.copy(center).add(fromCenter);const normal=fromCenter.clone().normalize();const outward=velocity.dot(normal);if(outward>0)velocity.addScaledVector(normal,-outward);}
+        if(interaction?.projectWalk){attempted.copy(root.position);root.position.copy(interaction.projectWalk(attempted));normal.copy(attempted).sub(root.position).normalize();const outward=velocity.dot(normal);if(outward>0)velocity.addScaledVector(normal,-outward);}
+        else {fromCenter.setLength(1.36);root.position.copy(center).add(fromCenter);normal.copy(fromCenter).normalize();const outward=velocity.dot(normal);if(outward>0)velocity.addScaledVector(normal,-outward);}
       }
-      const actual=root.position.distanceTo(previous);speed=actual/Math.max(dt,.00001);distance+=actual;
+      const actual=root.position.distanceTo(previous);speed=actual/Math.max(dt,.00001);distance+=actual;gaitCycle+=actual/stride;
       if(speed>.025){
-        const target=Math.atan2(velocity.x,velocity.z),angle=Math.atan2(Math.sin(target-root.rotation.y),Math.cos(target-root.rotation.y));
-        root.rotation.y+=angle*(1-Math.exp(-12*dt));
+        const target=Math.atan2(velocity.x,velocity.z),angle=angleDelta(target,root.rotation.y);
+        const turn=THREE.MathUtils.clamp(angle*(1-Math.exp(-11*dt)),-8*dt,8*dt);
+        root.rotation.y+=turn;turnRate=dt>0?turn/dt:0;
         state=requested.lengthSq()?'walk':'stop';stoppedElapsed=0;
       }else {state=requested.lengthSq()&&velocity.length()>.03?'stop':'idle';stoppedElapsed+=dt;}
+      forwardAcceleration=dt>0?THREE.MathUtils.clamp((velocity.x-oldVelocity.x)*Math.sin(root.rotation.y)/dt+(velocity.z-oldVelocity.z)*Math.cos(root.rotation.y)/dt,-8,8):0;
     }else{velocity.set(0,0,0);stoppedElapsed+=dt;}
-    walkWeight=damp(walkWeight,locked?0:Math.min(1,speed/.65),12,dt);
-    const phase=distance/.48*Math.PI*2;
+    walkWeight=damp(walkWeight,locked?0:Math.min(1,speed/.85),speed>.02?13:9,dt);
+    fast=damp(fast,smooth((speed-1.10)/.66),12,dt);stride=.64+.12*fast;
+    const phase=gaitCycle*Math.PI*2;
+    const support=limbs[0].swing?1:limbs[1].swing?-1:0;
+    const weight=follow(weightShift,support*walkWeight,17,dt);
     const breath=Math.sin(clock*1.9)*.0027*(1-meditation*.7);
-    const bob=-Math.cos(phase*2)*.0055*walkWeight;
-    body.position.y=-.34*meditation+breath+bob;
+    const bob=(-.009-.005*Math.cos(phase*2))*walkWeight;
+    body.position.set(weight*mix(.048,.064,fast)*(1-meditation),-.34*meditation+breath+bob,0);
     const preparation=smooth(Math.min(transitionTime/(state==='rising'?.95:1.15),1));
-    body.rotation.x=-Math.sin(Math.PI*preparation)*.045*(inTransition?1:0)+.015*walkWeight;
-    body.rotation.z=Math.sin(phase)*.018*walkWeight;
+    const lean=follow(pitch,mix(.036,.074,fast)*walkWeight+forwardAcceleration*.0055,13,dt);
+    const bank=follow(roll,weight*.040-turnRate*.011*walkWeight,15,dt);
+    const counter=follow(twist,Math.sin(phase+.35)*mix(.068,.090,fast)*walkWeight-turnRate*.009,14,dt);
+    body.rotation.set(-Math.sin(Math.PI*preparation)*.055*(inTransition?1:0)+lean*(1-meditation),counter*(1-meditation),bank*(1-meditation));
+    const shoulderTurn=follow(shoulderSpring,-counter*.82,14,dt);
+    upperBody.rotation.set(-lean*.28*(1-meditation),shoulderTurn*(1-meditation),-bank*.25*(1-meditation));
     body.scale.set(1,1+breath*.55,1+breath*.65);
-    head.rotation.x=Math.sin(clock*.8)*.009*(1-meditation)+.08*meditation;
-    head.rotation.z=Math.sin(phase-.4)*.009*walkWeight;
+    head.rotation.x=Math.sin(clock*.8)*.009*(1-meditation)+.08*meditation-lean*.5*(1-meditation);
+    head.rotation.y=-(counter+shoulderTurn)*.70*(1-meditation);
+    head.rotation.z=-bank*.65*(1-meditation);
     if(externalFocus.locked){const angle=Math.atan2(Math.sin(externalFocus.yaw-root.rotation.y),Math.cos(externalFocus.yaw-root.rotation.y));root.rotation.y+=angle*(1-Math.exp(-5*dt));}
     body.rotation.x+=externalFocus.weight*.025;head.rotation.x+=externalFocus.weight*.095;
-    hat.rotation.z=Math.sin(phase-.65)*.015*walkWeight+Math.sin(clock*1.1)*.003;
-    for(let i=0;i<locks.length;i++)locks[i].rotation.x=Math.sin(phase-.85)*.012*walkWeight+Math.sin(clock*1.3+i)*.002;
+    hat.rotation.x=-.18+follow(hatPitch,-lean*.8+Math.sin(phase-.65)*mix(.025,.038,fast)*walkWeight,9,dt);
+    hat.rotation.z=follow(hatRoll,-bank*.7+Math.sin(phase-.65)*mix(.034,.047,fast)*walkWeight,10,dt)+Math.sin(clock*1.1)*.003;
+    const lag=follow(clothLag,-speed*.025-forwardAcceleration*.008+Math.sin(phase-.7)*mix(.028,.043,fast)*walkWeight,10,dt);
+    const sideLag=follow(clothSide,-turnRate*.013+Math.sin(phase-.8)*mix(.020,.032,fast)*walkWeight,11,dt);
+    const hair=follow(hairLag,-lean*.9-speed*.021-forwardAcceleration*.004+Math.sin(phase-.85)*mix(.030,.046,fast)*walkWeight,9,dt);
+    for(let i=0;i<locks.length;i++){locks[i].rotation.x=hair+Math.sin(clock*1.3+i)*.002;locks[i].rotation.z=sideLag*(i?-.7:.7);}
     // Clothing folds react locally. Hem lifts rather than intersecting the platform when seated.
     const drapeWeight=smooth(meditation);
     const sp=skirt.geometry.attributes.position;
     for(let i=0;i<sp.count;i++){
-      const x=skirtBase[i*3],y=skirtBase[i*3+1],z=skirtBase[i*3+2],t=(.63-y)/.41;
-      const angle=Math.atan2(z,x),drape=.63-.235*Math.pow(t,.85)+.012*Math.cos(angle*2)*Math.sin(t*Math.PI);
-      sp.setXYZ(i,mix(x,x*(1+.40*smooth(t)),drapeWeight),mix(y,drape,drapeWeight),mix(z,z*(1-.16*t)+.065*t,drapeWeight)+Math.sin(phase+.7)*.014*t*walkWeight);
+      const x=skirtBase[i*3],y=skirtBase[i*3+1],z=skirtBase[i*3+2],w=skirtWeights[i],t=w.t;
+      sp.setXYZ(i,mix(x,x*(1+.40*w.spread),drapeWeight)+sideLag*t*t*(1-drapeWeight),mix(y,w.fold,drapeWeight),mix(z,z*(1-.16*t)+.065*t,drapeWeight)+lag*t*t*(1-drapeWeight));
     }
-    sp.needsUpdate=true;skirt.geometry.computeVertexNormals();
-    hem.position.y=mix(.235,.395,drapeWeight);hem.position.z=.065*drapeWeight;hem.scale.set(1+.40*drapeWeight,1,1-.16*drapeWeight);
+    sp.needsUpdate=true;
+    hem.position.set(sideLag*(1-drapeWeight),mix(.235,.395,drapeWeight),.065*drapeWeight+lag*(1-drapeWeight));hem.scale.set(1+.40*drapeWeight,1,1-.16*drapeWeight);
     const cp=capeGeo.attributes.position;
     for(let i=0;i<cp.count;i++){
-      const x=capeBase[i*3],y=capeBase[i*3+1],z=capeBase[i*3+2],t=(.93-y)/.55;
-      cp.setXYZ(i,x*(1+.10*t*meditation),mix(y,.93-t*.57,meditation),z-Math.sin(phase-.9)*.025*t*t*walkWeight-Math.sin(clock*1.3)*.003*t);
+      const x=capeBase[i*3],y=capeBase[i*3+1],z=capeBase[i*3+2],t=capeWeights[i];
+      cp.setXYZ(i,x*(1+.10*t*meditation)+sideLag*t*t,mix(y,.93-t*.57,meditation),z+lag*1.35*t*t-Math.sin(clock*1.3)*.003*t);
     }
-    cp.needsUpdate=true;capeGeo.computeVertexNormals();
+    cp.needsUpdate=true;
+    // Small sway retains the rest normals. Recompute only changing seated folds at 20 Hz.
+    normalClock+=dt;if(Math.abs(drapeWeight-previousDrape)>1e-7)normalDirty=true;
+    if(normalDirty&&(normalClock>=.05||meditation===0||meditation===1)){skirt.geometry.computeVertexNormals();capeGeo.computeVertexNormals();normalClock=0;normalDirty=false;}
+    previousDrape=drapeWeight;
+    // One swing at a time. Travel relative to the planted feet schedules the next
+    // contact, so cadence follows actual displacement even at boundaries/curves.
+    if(!locked&&speed>.12&&!limbs[0].swing&&!limbs[1].swing){
+      forward.copy(velocity).setY(0).normalize();right.set(forward.z,0,-forward.x);
+      const yaw=Math.atan2(forward.x,forward.z);
+      let index=1-lastStep,l=limbs[index];
+      const behind=normal.copy(l.foot).sub(root.position).dot(forward);
+      if(behind<-.115||Math.abs(angleDelta(yaw,l.footYaw))>.55){
+        const duration=THREE.MathUtils.clamp(stride*swingFraction/Math.max(speed,.6),.22,.34);
+        const lead=Math.min(.33+.025*fast,speed*duration+.12);
+        seat.copy(root.position).addScaledVector(forward,lead).addScaledVector(right,l.side*.13);
+        startStep(l,seat);l.toYaw=yaw;lastStep=index;
+      }
+    }
     for(let index=0;index<limbs.length;index++){
       const l=limbs[index],side=l.side;
-      const gait=(distance/.48+index*.5)%1;
-      const swingDuration=.38;
-      if(speed>.015&&!locked){
-        if(gait<swingDuration){
-          if(!l.swing||gait<l.prevU){
-            l.from.copy(l.foot);
-            const forward=velocity.clone().setY(0).normalize(),right=V(forward.z,0,-forward.x);
-            l.to.copy(root.position).addScaledVector(forward,.24).addScaledVector(right,side*.13);l.to.y=root.position.y+.052;
+      const gait=(distance/stride+index*.5)%1;
+      neutral.set(side*.13,groundAnkle,.025).applyAxisAngle(up,root.rotation.y).add(root.position);
+      if(speed>.02&&!locked){
+        if(l.swing&&!l.settling){
+          // Retarget only the airborne foot during a direction change. Freeze its
+          // destination before contact; the support foot keeps its world position.
+          if(l.swingU<.72&&Math.abs(angleDelta(Math.atan2(velocity.x,velocity.z),l.toYaw))>.12){
+            forward.copy(velocity).setY(0).normalize();right.set(forward.z,0,-forward.x);
+            seat.copy(root.position).addScaledVector(forward,Math.min(.33+.025*fast,stride*swingFraction*(1-l.swingU)+.12)).addScaledVector(right,side*.13);seat.y=root.position.y+groundAnkle;
+            l.to.lerp(seat,1-Math.exp(-18*dt));l.toYaw+=angleDelta(Math.atan2(forward.x,forward.z),l.toYaw)*(1-Math.exp(-18*dt));
           }
-          l.swing=true;const t=gait/swingDuration;
-          l.foot.lerpVectors(l.from,l.to,smooth(t));l.foot.y+=Math.sin(t*Math.PI)*.075;
-        }else {if(l.swing)l.foot.copy(l.to);l.swing=false;}
-      }else {
-        const neutral=V(side*.13,.052,.025).applyAxisAngle(up,root.rotation.y).add(root.position);
-        l.foot.lerp(neutral,1-Math.exp(-15*dt));l.swing=false;
+          l.swingU=Math.min(1,l.swingU+speed*dt/(stride*swingFraction));
+        }
+      }else if(!locked){
+        if(l.swing)l.settling=true;
+        else if(!limbs[1-index].swing&&l.foot.distanceToSquared(neutral)>.0064)startStep(l,neutral,true);
       }
+      if(l.swing&&!locked){
+        if(l.settling)l.swingU=Math.min(1,l.swingU+dt/.19);
+        const t=l.swingU;
+        l.foot.lerpVectors(l.from,l.to,settle(t));
+        l.foot.y+=Math.sin(Math.PI*t)**2*(l.settling?.042:mix(.076,.096,fast));
+        l.footYaw=l.fromYaw+angleDelta(l.toYaw,l.fromYaw)*settle(t);
+        if(t>=1){l.foot.copy(l.to);l.swing=false;l.settling=false;}
+      }
+      if(locked){l.foot.copy(neutral);l.footYaw=root.rotation.y;l.swing=false;l.settling=false;l.swingU=0;}
       l.prevU=gait;
-      const local=l.foot.clone().sub(root.position).applyAxisAngle(up,-root.rotation.y);
-      const hip=V(side*.13,.51+body.position.y,0);
-      // Turning may leave a planted world-space foot across the body's midline.
-      // Keep targets on their anatomical side and within the two-bone reach.
-      if(!locked||externalFocus.locked){
-        local.x=side*THREE.MathUtils.clamp(side*local.x,.065,.195);
-        const reach=Math.sqrt(Math.max(.0064,.528*.528-(hip.y-local.y)**2-(hip.x-local.x)**2));
-        local.z=THREE.MathUtils.clamp(local.z,-reach,reach);
-        l.foot.copy(local).applyAxisAngle(up,root.rotation.y).add(root.position);
-      }
-      const standingKnee=knee(hip,local);
-      const seatedKnee=V(side*.31,.105,.23),seatedFoot=V(-side*.075,.063+index*.02,.36);
-      const ankle=local.clone().lerp(seatedFoot,meditation),joint=standingKnee.lerp(seatedKnee,meditation);
+      const local=l.local.copy(l.foot).sub(root.position).applyAxisAngle(up,-root.rotation.y);
+      const hip=l.hip.set(side*.13,.51,0).applyEuler(body.rotation).add(body.position);
+      // Distribute a small reach correction at the concealed hip instead of
+      // sliding the planted boot. The original segment meshes/pivots are retained.
+      const hipReach=hip.distanceTo(local);
+      if(hipReach>.528)hip.addScaledVector(normal.copy(local).sub(hip),1-.528/hipReach);
+      knee(hip,local,l.joint);
+      const ankle=l.ankle.copy(local).lerp(seat.set(-side*.075,.063+index*.02,.36),meditation);
+      const joint=l.joint.lerp(seat.set(side*.31,.105,.23),meditation);
       link(l.upperLeg,hip,joint,.07);link(l.lowerLeg,joint,ankle,.058);
-      l.shoe.position.copy(ankle).add(V(0,-.011,.044));
-      l.shoe.rotation.set(-.22*meditation,-meditation*side*1.32,-side*.32*meditation);
-      // Arms stay close; cross swing is subdued and hands settle on knees.
-      const shoulder=V(side*.19,.85+body.position.y,0);
-      const armSwing=Math.sin(phase+index*Math.PI)*.052*walkWeight;
-      const elbow=V(side*.23,.65+body.position.y,armSwing*.55).lerp(V(side*.29,.43,.065),meditation);
-      const wrist=V(side*.235,.46+body.position.y,armSwing).lerp(V(side*.29,.18,.22),meditation);
+      l.shoe.position.copy(ankle);l.shoe.position.y-=.011;
+      const bootYaw=angleDelta(l.footYaw,root.rotation.y);
+      l.shoe.position.x+=Math.sin(bootYaw)*.044*(1-meditation);
+      l.shoe.position.z+=.044*(Math.cos(bootYaw)*(1-meditation)+meditation);
+      const solePitch=l.swing?Math.sin(l.swingU*Math.PI*2)*.15:0;
+      l.shoe.rotation.set(mix(solePitch,-.22,meditation),bootYaw*(1-meditation)-meditation*side*1.32,-side*.32*meditation);
+      // Contralateral arms, relaxed elbow flexion and stable head above the moving hips.
+      const armSwing=THREE.MathUtils.clamp(-local.z*mix(.70,.90,fast),-.17,.17)*walkWeight;
+      const flex=Math.max(0,-armSwing)*.42;
+      const opening=mix(.014,.024,fast)*walkWeight;
+      const shoulder=upperPoint(l.shoulder.set(side*.19,.85,0));
+      const elbow=upperPoint(l.elbow.set(side*(.23+opening*.7),.65+flex,armSwing*.52)).lerp(seat.set(side*.29,.43,.065),meditation);
+      const wrist=upperPoint(l.wrist.set(side*(.235+opening),.46+flex*1.7,armSwing+.020*walkWeight)).lerp(seat.set(side*.29,.18,.22),meditation);
       link(l.upperArm,shoulder,elbow,.065);link(l.lowerArm,elbow,wrist,.055);
-      l.hand.position.copy(wrist).add(V(0,-.004,.008*meditation));l.hand.rotation.set(-.95*meditation,0,side*meditation*.45);
+      l.hand.position.copy(wrist);l.hand.position.y-=.004;l.hand.position.z+=.008*meditation;
+      l.hand.rotation.set(mix(-armSwing*1.8,-.95,meditation),counter*.5*(1-meditation),side*meditation*.45);
     }
     // Only the contextual interaction hint is visible. No HUD or debug buttons.
     const canMeditate=!locked&&root.position.distanceTo(center)<.38;
@@ -341,6 +418,8 @@ export function createWitch({ hint }) {
     if(astralPose.locked)hint.hidden=true;
     return {state,x:root.position.x,z:root.position.z,speed,meditation,walkWeight,phase};
   }
+  // Match the approved standing surface at construction (also used by Véu's bake).
+  skirt.geometry.computeVertexNormals();
   update(0);
   return {root,update,standUp,
     isStable:()=>['idle','walk','stop'].includes(state)&&!externalFocus.locked,

@@ -78,7 +78,8 @@ export function createLivingGarden({scene,waterMesh,waterMaterial,rippleMaterial
   // Derived from the exact approved radial-front timing; only read elapsed/state.
   const t=ritual.elapsed-.65,smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
   front=ritual.state==='awakening'?smooth((t-.14)/1.51):1;
-  pulse=ritual.state==='awakening'?smooth((t-.14)/.25)*(1-smooth((t-1.65)/.30)):0;
+  pulse=ritual.state==='awakening'?(ritual.vfxPulse??smooth((t-.14)/.25)*(1-smooth((t-1.65)/.30))):0;
+  if(ritual.state==='awakening'&&ritual.vfxFrontRadius!==undefined)front=ritual.vfxFrontRadius/5.1;
   uniforms.gardenScry.value=scry.calm;uniforms.gardenTime.value=motionTime;uniforms.gardenBreeze.value=breeze;uniforms.gardenPulse.value=pulse;uniforms.gardenFront.value=front;
   waterMaterial.map.offset.set(Math.sin(motionTime*.11)*.005,motionTime*.0018);
   waterMaterial.bumpMap.offset.set(-motionTime*.0021,Math.sin(motionTime*.09)*.008);

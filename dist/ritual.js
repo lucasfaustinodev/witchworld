@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.js';
+import { createRitualVFX } from './ritual-vfx.js';
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
@@ -52,6 +53,8 @@ export function createRitual({scene,character,skulls,hint}){
     }
     texture.needsUpdate=true;
   }
+  // Approved strokes become an immutable shader mask.
+  paintSymbol(1,1,0,0);
   const haloCanvas=document.createElement('canvas');haloCanvas.width=haloCanvas.height=128;
   const hc=haloCanvas.getContext('2d'),gradient=hc.createRadialGradient(64,64,4,64,64,64);
   gradient.addColorStop(0,'rgba(160,92,197,.36)');gradient.addColorStop(.4,'rgba(122,52,179,.25)');gradient.addColorStop(1,'rgba(122,52,179,0)');
@@ -60,6 +63,7 @@ export function createRitual({scene,character,skulls,hint}){
   const halo=new THREE.Mesh(new THREE.PlaneGeometry(1.7,1.7),new THREE.MeshBasicMaterial({map:haloTex,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
   halo.rotation.x=-Math.PI/2;halo.position.set(0,floor+.003,.3);group.add(halo);
   const centerLight=new THREE.PointLight('#ad68ed',0,5.6,2);centerLight.position.set(.55,1.35,1.45);scene.add(centerLight);
+  const ritualLightColor=centerLight.color.clone(),ritualCrestColor=new THREE.Color('#c0a0f0');
 
   // Effects stay on the approved roots; GLB eye anchors only align the visual glow.
   const boneGlow=new THREE.Color('#66248e');
@@ -72,22 +76,11 @@ export function createRitual({scene,character,skulls,hint}){
       if(skull.userData.ritualEyes)eye.position.copy(skull.userData.ritualEyes[eyeIndex]);
     }
     const light=new THREE.PointLight('#a953e5',0,2.3,2);light.position.set(0,.53,0);skull.add(light);
-    function ribbon(inner){
-      const segments=18,positions=new Float32Array((segments+1)*2*3),indices=[];
-      for(let j=0;j<segments;j++){const k=j*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}
-      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setIndex(indices);
-      const colors=[];
-      for(let j=0;j<=segments;j++){const t=j/segments,v=Math.sin(Math.PI*t)**.45;for(let s=0;s<2;s++)colors.push(v,v,v);}
-      geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-      const material=new THREE.MeshBasicMaterial({color:inner?'#d0b4e3':'#874fc0',vertexColors:true,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending});
-      const mesh=new THREE.Mesh(geometry,material);mesh.rotation.y=.46-skull.rotation.y;mesh.position.y=.42;mesh.frustumCulled=false;effects.add(mesh);
-      return {mesh,inner,segments};
-    }
-    return {effects,eyes,light,ribbons:[ribbon(false),ribbon(true)],index,boneMaterials:skull.userData.ritualBoneMaterials??[]};
+    return {effects,eyes,light,index,boneMaterials:skull.userData.ritualBoneMaterials??[]};
   });
 
-  // Sparse points: two loose circular flows and a few embers over each skull.
-  const count=75,positions=new Float32Array(count*3),colors=new Float32Array(count*3);
+  // Only skull embers remain: no hand or body sprites to stretch into orbit.
+  const count=25,positions=new Float32Array(count*3),colors=new Float32Array(count*3);
   for(let i=0;i<count;i++){const c=new THREE.Color(i%3?'#9960ce':'#caa5dd');c.toArray(colors,i*3);}
   const pointCanvas=document.createElement('canvas');pointCanvas.width=pointCanvas.height=32;
   const pc=pointCanvas.getContext('2d'),pg=pc.createRadialGradient(16,16,0,16,16,16);
@@ -96,6 +89,7 @@ export function createRitual({scene,character,skulls,hint}){
   const points=new THREE.Points(pointsGeometry,new THREE.PointsMaterial({map:new THREE.CanvasTexture(pointCanvas),size:3.6,transparent:true,depthWrite:false,vertexColors:true,blending:THREE.AdditiveBlending}));
   points.frustumCulled=false;group.add(points);
   const pointBase=colors.slice();
+  const vfx=createRitualVFX({group,symbol,texture,halo,floor,character,skulls});
   let state='inactive',elapsed=0,clock=0,height=0,exitElapsed=0;
   let exitValues=null;
   let values={energy:0,lift:0,lines:0,circle:0,particles:0,light:0,front:0,wave:0,skulls:[0,0,0,0,0]};
@@ -122,50 +116,38 @@ export function createRitual({scene,character,skulls,hint}){
     const visible=state!=='inactive'&&state!=='pause';group.visible=visible;
     character.root.position.y=groundY+height;
     const pulse=1+Math.sin(clock*1.9)*.060;
-    paintSymbol(values.lines,values.circle,values.front,values.wave);ink.opacity=state==='descending'?1-ease(exitElapsed/.80):.86*pulse;
-    halo.material.opacity=values.energy*.82*pulse;halo.scale.setScalar(.55+values.energy*.70);
+    const presentation=vfx.update({clock,state,elapsed,pose,values,height,exitElapsed});
+    halo.material.opacity=values.energy*.65*pulse;halo.scale.setScalar(.55+values.energy*.70);
+    // The existing key follows the energy upward, retaining its original budget.
+    const liftedEnergy=clamp(height/.34)*values.energy;
+    centerLight.position.set(.55,1.35+height*.8,1.45-values.energy*.4);
+    centerLight.color.copy(ritualLightColor).lerp(ritualCrestColor,liftedEnergy*.30);
     centerLight.intensity=values.light*9.8*pulse;
     let litSkulls=0;
     responders.forEach((r,i)=>{
-      const activation=values.skulls[i],flame=activation*activation,flutter=1+Math.sin(clock*1.7+i*1.8)*.04;
+      const activation=values.skulls[i];
       for(const {material,baseEmissive} of r.boneMaterials)material.emissive.copy(baseEmissive).lerp(boneGlow,activation*.16);
       r.effects.visible=visible&&activation>.001;r.eyes.opacity=activation*.85;
       r.light.intensity=activation*2.8*pulse*(1+Math.sin(clock*1.7+i*1.8)*.025*activation);if(activation>.95)litSkulls++;
-      if(r.effects.visible)for(const {mesh,inner,segments} of r.ribbons){
-        mesh.material.opacity=flame*(inner?.42:.32)*flutter;const p=mesh.geometry.attributes.position;
-        for(let j=0;j<=segments;j++){
-          const t=j/segments,tip=Math.sin(t*Math.PI)*.060+Math.pow(1-t,.8)*(inner?.026:.079);
-          const curl=Math.sin(t*4.5-clock*1.4+i*1.8)*.070*t*t+Math.sin(t*2.7)*.045;
-          for(let s=0;s<2;s++)p.setXYZ(j*2+s,curl+(s?1:-1)*tip,t*(inner?.60:.84)*flame*flutter,Math.sin(t*4-clock+i)*.045*t);
-        }
-        p.needsUpdate=true;
-      }
     });
-    if(visible&&values.particles>0){
+    const pointStrength=values.particles;
+    points.visible=group.visible&&pointStrength>.001;
+    if(points.visible){
       for(let i=0;i<count;i++){
-        let fade=1;
-        if(i<32){
-          const angle=i*2.399963+clock*.24,radius=1.42+.26*Math.sin(i*1.7);
-          positions[i*3]=Math.cos(angle)*radius;positions[i*3+1]=.32+.10*(i%5)/5+Math.sin(angle*2+clock)*.025;positions[i*3+2]=.3+Math.sin(angle)*radius;
-          fade=.70+.25*Math.sin(clock*1.1+i)**2;
-        }else if(i<50){
-          const u=((i-32)/18+clock*.11)%1,angle=i*2.399963-clock*.28,radius=.43+.05*Math.sin(i+clock*.6);
-          positions[i*3]=Math.cos(angle)*radius;positions[i*3+1]=.35+height+u*.80;positions[i*3+2]=.3+Math.sin(angle)*radius;
-          fade=Math.sin(u*Math.PI)**.65;
-        }else{
-          const n=(i-50)%5,skull=skulls[n],u=((i-50)/25+clock*.22)%1;
-          positions[i*3]=skull.position.x+Math.sin(i+clock)*.10*u;positions[i*3+1]=.68+u*.98;positions[i*3+2]=skull.position.z+Math.cos(i*2+clock)*.09*u;
-          fade=Math.sin(u*Math.PI)**.7*values.skulls[n];
-        }
+        const n=i%5,skull=skulls[n],u=(i/25+clock*.22)%1;
+        positions[i*3]=skull.position.x+Math.sin(i+clock)*.10*u;
+        positions[i*3+1]=.68+u*.98;
+        positions[i*3+2]=skull.position.z+Math.cos(i*2+clock)*.09*u;
+        const fade=Math.sin(u*Math.PI)**.7*values.skulls[n];
         for(let c=0;c<3;c++)colors[i*3+c]=pointBase[i*3+c]*fade;
       }
       pointsGeometry.attributes.position.needsUpdate=true;pointsGeometry.attributes.color.needsUpdate=true;
     }
-    points.material.opacity=values.particles*.78;
+    points.material.opacity=pointStrength*.72;
     if(pose.state==='meditate'){
       hint.hidden=false;hint.textContent=state==='descending'?'Encerrando…':'E — Encerrar ritual';
     }
-    return {state,elapsed,height,litSkulls,lines:values.lines,circle:values.circle};
+    return {state,elapsed,height,litSkulls,lines:values.lines,circle:values.circle,vfxFrontRadius:presentation.frontRadius,vfxPulse:presentation.wave};
   }
-  return {update};
+  return {update,metrics:vfx.metrics};
 }

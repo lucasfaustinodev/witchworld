@@ -89,17 +89,19 @@ class DetailPass extends Pass {
    if(!o.material)return;
    const materials=Array.isArray(o.material)?o.material:[o.material];
    const inMagic=(()=>{let p=o;while(p){if(p.name==='ritual'||p.name==='caveira')return true;p=p.parent;}return false;})();
-   const selected=m=>(m.emissive&&m.emissiveIntensity>0&&m.emissive.getHex()!==0&&!inMagic)||(m.isMeshBasicMaterial&&!m.toneMapped)||(inMagic&&(m.isMeshBasicMaterial||m.isPointsMaterial));
+   const selected=m=>(m.emissive&&m.emissiveIntensity>0&&m.emissive.getHex()!==0&&!inMagic)||(m.isMeshBasicMaterial&&!m.toneMapped)||(inMagic&&(m.isMeshBasicMaterial||m.isPointsMaterial||m.userData.ritualVFX));
    if(!materials.some(selected))return;
    const copies=materials.map(m=>{
-    const c=m.isPointsMaterial?m.clone():new THREE.MeshBasicMaterial();
+    const c=m.isPointsMaterial||m.userData.ritualVFX?m.clone():new THREE.MeshBasicMaterial();
+    if(m.userData.ritualVFX)c.uniforms=m.uniforms;
     for(const k of ['map','alphaMap','alphaTest','transparent','opacity','side','vertexColors','blending','depthWrite','polygonOffset','polygonOffsetFactor','polygonOffsetUnits'])if(m[k]!==undefined)c[k]=m[k];
     c.fog=false;c.toneMapped=false;
     c.userData.selected=selected(m);c.userData.source=m;
     c.onBeforeCompile=shader=>{
      shader.uniforms.sceneDepth=this.depthUniform;shader.uniforms.maskSize=this.sizeUniform;
      shader.fragmentShader='uniform sampler2D sceneDepth;uniform vec2 maskSize;\n'+shader.fragmentShader;
-     shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif(gl_FragCoord.z>texture2D(sceneDepth,gl_FragCoord.xy/maskSize).r+.00008)discard;');
+     const depthClip='if(gl_FragCoord.z>texture2D(sceneDepth,gl_FragCoord.xy/maskSize).r+.00008)discard;';
+     shader.fragmentShader=m.userData.ritualVFX?shader.fragmentShader.replace('void main(){','void main(){'+depthClip):shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\n'+depthClip);
     };
     c.customProgramCacheKey=()=>`ritual-emission-depth-v1`;return c;
    });
@@ -133,6 +135,7 @@ class DetailPass extends Pass {
     for(const e of this.emitters){
      e.mask=e.object.layers.mask;e.original=e.object.material;e.object.layers.set(this.layer);
      for(const c of e.copies){const m=c.userData.source;
+      if(m.userData.ritualVFX){c.uniforms=m.uniforms;c.visible=m.visible;continue;}
       c.color.copy(m.emissive&&m.emissive.getHex()!==0?m.emissive:m.color);
       if(m.emissive)c.color.multiplyScalar(m.emissiveIntensity);
       if(!c.userData.selected)c.color.set(0);

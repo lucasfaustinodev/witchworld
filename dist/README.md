@@ -673,3 +673,67 @@ deformação. Corpo físico, espíritos errantes e demais sistemas preservados.
 Validação pontual com Game Studio: comparação antes/depois, vídeo em repouso,
 três ciclos do Véu, V rápido, movimento, retorno, ritual e console. A remoção
 reduz a geometria astral sem acrescentar meshes, luzes ou passes.
+
+### Quality Upgrade 1 — movimento físico (08/10/2026, preview)
+
+Somente `character.js`: velocidade máxima de 1,10 unidade/s e controles
+preservados. Aceleração integrada, frenagem amortecida e rotação limitada a
+8 rad/s evitam mudanças instantâneas. Contatos alternados dependem do
+deslocamento real; o pé apoiado mantém sua posição mundial. O pé em suspensão
+revisa seu destino nas curvas. Uma correção pequena no quadril encoberto pela
+roupa mantém as duas partes da perna com 0,265 unidade, sem esticá-las.
+
+Quadril/tronco transferem peso, cabeça contrabalança a inclinação e braços
+respondem à posição da perna oposta. Chapéu, cabelo, saia e capa usam molas
+criticamente amortecidas com solução dependente de delta time. Pesos das
+dobras são pré-calculados; normais são recalculadas apenas durante mudanças
+da pose sentada, até 20 Hz. Sentar continua em 1,15 s, levantar em 0,95 s;
+ritual, pausa e levitação não foram editados.
+
+Game Studio / Playwright: WASD e setas, partidas/paradas/curvas/limites,
+três ciclos de ritual, três de Véu, três de vidência, intertravamentos,
+desktop e viewport móvel. Câmera e listeners preservados; geometria e normais
+da projeção astral inicial idênticas ao baseline. Console sem erros/avisos.
+
+Custo de render físico mantido: 290 draw calls, 410.857 triângulos, 19 luzes,
+10 passes, 355 objetos. Nenhum mesh, material, passe, luz ou dependência novo.
+No ensaio de 330 updates a 60 Hz com curvas e inversões, os contatos apoiados
+deixaram de deslizar; não é garantia de ausência de clipping em todas as poses.
+Captura em SwiftShader/Chromium: sem medição de FPS real de GPU.
+
+Limites: animação procedural com a geometria e iluminação aprovadas. A roupa
+não possui colisão física e a barra ainda encobre boa parte das pernas na
+câmera principal. Viewport móvel emulado, sem teste em GPU móvel ou Safari.
+Publicação somente no Site de revisão; GitHub/Vercel aguardam aprovação.
+
+### Caminhada mais rápida com Shift (08/10/2026)
+
+Segurar Shift esquerdo ou direito junto de WASD/setas aumenta a caminhada
+física em 30% (1,10 → 1,43 unidade/s). Soltar Shift retorna suavemente à
+velocidade normal. A mesma aceleração, frenagem, apoio dos pés e limites são
+reutilizados; ritual, vidência e Véu mantêm seus bloqueios/controles.
+Perder o foco limpa o modificador para evitar velocidade presa.
+
+## Quality Upgrade — recuperação e publicação da prévia GPT (08/10/2026)
+
+Os arquivos locais dos Blocos 1.1 e 2 não persistiram entre sessões e não tinham sido enviados ao repositório interno. Esta revisão reconstrói a implementação sobre o estado publicado v29, sem restaurar arquivos do GitHub e sem alterar GitHub/Vercel. O usuário autorizou publicar diretamente esta prévia do GPT.
+
+### Movimentação física / Bloco 1.1
+
+Velocidade normal 1,10; Shift 1,76 (1,6×), com aceleração/desaceleração existentes. Transferência lateral de peso segue o pé de apoio, quadril e ombros contrarrotacionam através de um pivô de cintura, braços respondem ao deslocamento real e passos/cadência variam proporcionalmente à velocidade. Roupa, capa, cabelo e chapéu usam molas amortecidas dependentes de delta time. Botas mantêm apoio em coordenadas de mundo. Nenhuma geometria/material da personagem foi substituída; meditação e timings permanecem os aprovados.
+
+### Magic & VFX / Bloco 2
+
+`ritual-vfx.js` é um adaptador de apresentação GPU, separado da máquina de estados. Usa a máscara original do pentagrama: revelação, fluxo e pulsação nos mesmos traços; canvas desenhado uma única vez. O pulso é uma faixa polar deformada, com crista e dissipação; alcança o raio real das cinco caveiras no instante existente da ativação. Sua cauda visual segue para a vegetação sem alterar timers.
+
+Seis correntes em uma geometria: quatro convergentes/ascendentes e duas menores junto às mãos. Chamas das cinco caveiras em um batch de quinze lóbulos cruzados, com curvatura GPU, fases independentes e dissolução das pontas. Pool original de 75 pontos reaproveitado: convergência baixa, ascensão e brasas; oito pontos participam da preparação, com transição interpolada.
+
+`render-pipeline.js` incorpora esses shaders ao bloom seletivo existente, respeitando a profundidade. Sem novo pass/RenderTarget, aumento de bloom ou novas luzes. `living-garden.js` só compartilha o raio/intensidade do pulso com a reação ambiental já existente. Fora do ritual, a exploração mantém o caminho original.
+
+Baseline da v29, câmera normal 800×534 e DPR1: idle 290 calls / 410.857 triângulos. Atualização: idle idêntico; ritual ativo 320 calls / 416.817 triângulos (baseline 356 / 415.665). Luzes 19, passes 10, pool 75 + 14 vaga-lumes preservados. Chromium SwiftShader: as contagens não comprovam FPS em GPU física.
+
+Game Studio QA desta recuperação: três ciclos completos por viewport desktop/mobile; E rápido; cancelamento na pausa, despertar e ativo; tentativa de movimento bloqueado durante meditação; WASD/setas; Shift com teclas e setas; Véu e vidência depois do ritual; ritual novamente depois dos dois. Comparação direta de estados/altura/timing com a v29. Console e sintaxe verificados. Nenhuma dependência instalada.
+
+three.quarks foi avaliado na rodada anterior e não é necessário para esta conjuração fixa. Recursos nativos atendem fluxo/formas, preservam a integração existente e reduzem draws através de batching. Compatibilidade/custo de Quarks com Three r186 não foram benchmarkados; nenhuma alegação de ganho da biblioteca.
+
+Limites: chamas têm volume aparente, não simulação volumétrica. Desempenho/overdraw em GPU mobile real e aprovação artística continuam sujeitos à avaliação do usuário. A publicação usa exclusivamente o repositório interno e o endereço desta prévia do GPT.
