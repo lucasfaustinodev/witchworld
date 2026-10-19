@@ -83,6 +83,13 @@ class DetailPass extends Pass {
   this.blurMaterial=screenMaterial({source:{value:null},stepUV:{value:new THREE.Vector2()}},blurShader);
   this.combine=screenMaterial({source:{value:null},contactMap:{value:this.ao.texture},bloomMap:{value:this.glow.texture},depthMap:{value:null},useContact:{value:true},useBloom:{value:true},contactTexel:{value:new THREE.Vector2()},nearFarSpan:{value:80},contactStrength:{value:.78},bloomStrength:{value:.18}},combineShader);
   this.quad=new FullScreenQuad(null);this.emitters=[];this.black=new THREE.Color(0);this.layer=30;
+  this.depthUniform={value:null};this.sizeUniform={value:new THREE.Vector2()};this.drawStages=0;
+  this.emitterCache=new WeakMap();this.emitterSets=[];this.setScene(scene);
+ }
+ setScene(scene){
+  this.scene=scene;
+  if(this.emitterCache.has(scene)){this.emitters=this.emitterCache.get(scene);return;}
+  this.emitters=[];
   // Explicit selection, independent of brightness threshold. The moon, lit stone,
   // whole character, GLB bone and vegetation cannot enter this mask.
   scene.traverse(o=>{
@@ -107,7 +114,7 @@ class DetailPass extends Pass {
    });
    this.emitters.push({object:o,materials,copies});
   });
-  this.depthUniform={value:null};this.sizeUniform={value:new THREE.Vector2()};this.drawStages=0;
+  this.emitterCache.set(scene,this.emitters);this.emitterSets.push(this.emitters);
  }
  setSize(w,h){
   this.ao.setSize(Math.max(1,Math.ceil(w/2)),Math.max(1,Math.ceil(h/2)));
@@ -158,11 +165,11 @@ class DetailPass extends Pass {
   u.useContact.value=this.options.contact;u.useBloom.value=this.options.bloom;u.nearFarSpan.value=camera.far-camera.near;
   this.fullscreen(renderer,this.combine,this.renderToScreen?null:writeBuffer);
  }
- dispose(){for(const t of [this.ao,this.emission,this.blur,this.glow])t.dispose();for(const m of [this.contact,this.blurMaterial,this.combine])m.dispose();for(const e of this.emitters)for(const c of e.copies)c.dispose();this.quad.dispose();}
+ dispose(){for(const t of [this.ao,this.emission,this.blur,this.glow])t.dispose();for(const m of [this.contact,this.blurMaterial,this.combine])m.dispose();for(const set of this.emitterSets)for(const e of set)for(const c of e.copies)c.dispose();this.quad.dispose();}
 }
 
 export function createRenderPipeline({renderer,scene,camera,quality=innerWidth<600?'MEDIUM':'HIGH',beforeRender=null}){
- const originalFog=scene.fog;let config={...RENDER_QUALITY[quality]},width=1,height=1,auxiliaryPasses=0;
+ const fogs=new Map([[scene,scene.fog]]);let config={...RENDER_QUALITY[quality]},width=1,height=1,auxiliaryPasses=0;
  // Half float holds radiance before the single ACES/sRGB output conversion.
  const rt=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType});
  rt.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
@@ -177,17 +184,22 @@ export function createRenderPipeline({renderer,scene,camera,quality=innerWidth<6
   if(!capabilitiesOK)config.post=false;
   detail.options.contact=config.contact;detail.options.bloom=config.bloom;
   detail.enabled=true;aa.enabled=config.aa;
-  scene.fog=config.fog?originalFog:null;
+  scene.fog=config.fog?fogs.get(scene):null;
   renderer.setPixelRatio(Math.min(devicePixelRatio,config.pixelRatio));renderer.setSize(width,height);
   composer.setPixelRatio(config.post?renderer.getPixelRatio():1);composer.setSize(config.post?width:1,config.post?height:1);
  }
  function setSize(w,h){width=w;height=h;configure();}
+ function setWorld(nextScene,nextCamera){
+  if(!fogs.has(nextScene))fogs.set(nextScene,nextScene.fog);
+  scene=nextScene;camera=nextCamera;base.scene=scene;base.camera=camera;detail.setScene(scene);
+  scene.fog=config.fog?fogs.get(scene):null;
+ }
  function render(viewCamera=camera){
   renderer.info.reset();auxiliaryPasses=beforeRender?.()||0;
   if(config.post){base.camera=viewCamera;composer.render(0);}else{renderer.setRenderTarget(null);renderer.render(scene,viewCamera);}
   Object.assign(renderer.domElement.dataset,{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,renderQuality:quality,renderPasses:auxiliaryPasses+(config.post?1+(detail.enabled?detail.drawStages:0)+(aa.enabled?3:0)+1:1)});
  }
  function metrics(){return {quality,...config,auxiliaryPasses,passes:Number(renderer.domElement.dataset.renderPasses),color:'linear HDR → ACES 1.15 → sRGB',contactBuffer:[detail.ao.width,detail.ao.height],bloomBuffer:[detail.emission.width,detail.emission.height],selectedObjects:detail.emitters.length,halfFloatSupported:capabilitiesOK};}
- function dispose(){detail.dispose();aa.dispose();output.dispose();composer.dispose();renderer.info.autoReset=true;scene.fog=originalFog;}
- configure();return {render,setSize,configure,metrics,dispose};
+ function dispose(){detail.dispose();aa.dispose();output.dispose();composer.dispose();renderer.info.autoReset=true;for(const [s,fog] of fogs)s.fog=fog;}
+ configure();return {render,setSize,setWorld,configure,metrics,dispose};
 }

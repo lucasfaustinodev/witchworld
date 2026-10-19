@@ -1,5 +1,8 @@
 import * as THREE from './vendor/three.module.js';
 import { createWitch } from './character.js';
+import { createGardenNavigation } from './garden-navigation.js';
+import { createCabinInterior } from './cabin-interior.js';
+import { createCabinTravel } from './cabin-travel.js';
 import { createRitual } from './ritual.js';
 import { loadSkullModel } from './skull-model.js';
 import { createRenderPipeline } from './render-pipeline.js';
@@ -109,12 +112,19 @@ const geo = {
 // Shared instanced batches reduce thousands of decorative pieces to a few draws.
 const batches = new Map();
 const transform = new THREE.Object3D();
+// Semantic collision proxies are recorded with the exact authored transforms.
+// They never enter the render graph or change the layout/random seed.
+const navigationSurfaces=[],navigationObstacles=[];
+let navigationKind=null;
+function collisionBox(position,size,rotation=[0,0,0],ground=false,bridge=false){navigationObstacles.push({kind:'box',position:[...position],size:[...size],rotation:[...rotation],ground,bridge});}
+function collisionCylinder(x,y,z,radius,height){navigationObstacles.push({kind:'cylinder',position:[x,y,z],radius,height});}
 function part(g, m, p, s=[1,1,1], r=[0,0,0], shadow=true) {
   if(foliageShapes.includes(g)||g===petalGeo){if(palette.petals.includes(m))g=petalGeo;m=foliageMaterials.get(m)??m;}
   const key = `${g.uuid}/${m.uuid}/${shadow}`;
   if (!batches.has(key)) batches.set(key, { g, m, shadow, matrices: [] });
   transform.position.set(...p); transform.scale.set(...s); transform.rotation.set(...r); transform.updateMatrix();
   batches.get(key).matrices.push(transform.matrix.clone());
+  if(navigationKind&&g===geo.box)collisionBox(p,s,r,navigationKind==='ground'||navigationKind==='bridge',navigationKind==='bridge');
 }
 const box = (m,p,s,r,shadow) => part(geo.box,m,p,s,r,shadow);
 const sphere = (m,p,s,r,shadow) => part(geo.sphere,m,p,s,r,shadow);
@@ -166,7 +176,7 @@ const bounce=new THREE.DirectionalLight('#647da7',.60);bounce.position.set(3,7,1
 const outline=[[-6,-5.5],[-2.9,-5.8],[.2,-5.65],[2.8,-5.1],[3.9,-3.4],[3.6,-1.3],[4.5,.5],[4.2,2.3],[3.2,4.4],[.5,5.7],[-2,5.5],[-4.4,4.6],[-5.8,2.8],[-6.3,-.5]];
 const shape=new THREE.Shape();outline.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();
 const landGeo=new THREE.ExtrudeGeometry(shape,{depth:.6,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.18,bevelThickness:.14});
-landGeo.rotateX(-Math.PI/2);mesh(landGeo,[palette.earth,palette.dirt],[0,-.6,0]);
+landGeo.rotateX(-Math.PI/2);navigationSurfaces.push(mesh(landGeo,[palette.earth,palette.dirt],[0,-.6,0]));
 // Unobtrusive darker plinth beneath the pool and island, visually bounded diorama.
 // O próprio terreno sustenta o diorama; sem pedestal retangular de demo.
 // Static water relief: no reflection render, simulation or time-dependent shader.
@@ -196,7 +206,7 @@ for(let i=0;i<24;i++) {
 
 // Surface: individually colored masonry sectors, quiet engraved circle and star.
 const radius=2.87, top=.23;
-mesh(new THREE.CylinderGeometry(radius+.13,radius+.22,.24,80),palette.stone[2],[0,.06,.3]);
+navigationSurfaces.push(mesh(new THREE.CylinderGeometry(radius+.13,radius+.22,.24,80),palette.stone[2],[0,.06,.3]));
 function sector(inner,outer,a,b,h=.055) {
  const sh=new THREE.Shape();sh.absarc(0,0,outer,a,b,false);sh.lineTo(Math.cos(b)*inner,Math.sin(b)*inner);sh.absarc(0,0,inner,b,a,true);sh.closePath();
  const g=new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:true,bevelSize:.012,bevelThickness:.008,bevelSegments:2,curveSegments:3});g.rotateX(-Math.PI/2);return g;
@@ -211,10 +221,12 @@ for(let row=0;row<4;row++){
  }
 }
 // Batch the exact existing sectors by material. World vertices/UVs stay unchanged.
-for(const [m,parts] of sectorBatches){mesh(mergeGeometries(parts,false),m).name='ritual-stone-sectors';parts.forEach(g=>g.dispose());}
+for(const [m,parts] of sectorBatches){const sectors=mesh(mergeGeometries(parts,false),m);sectors.name='ritual-stone-sectors';navigationSurfaces.push(sectors);parts.forEach(g=>g.dispose());}
+navigationKind='ground';
 for(let i=0;i<42;i++){
  const a=i/42*Math.PI*2;box(pick(palette.stone),[Math.cos(a)*2.91,.23,Math.sin(a)*2.91+.3],[.41,.18,.24],[0,-a,range(-.02,.02)]);
 }
+navigationKind=null;
 const inscription=document.createElement('canvas');inscription.width=1024;inscription.height=1024;
 const ctx=inscription.getContext('2d');const center=512,rr=415;
 ctx.strokeStyle='#e0cfcc';ctx.lineWidth=6;ctx.lineCap='round';
@@ -234,7 +246,9 @@ function skull(x,z,angle) {
   const group=new THREE.Group();group.position.set(x,.25,z);group.rotation.y=angle;
   const {visual,eyes,boneMaterials}=createSkullVisual();
   group.add(visual);group.userData.ritualEyes=eyes;group.userData.ritualBoneMaterials=boneMaterials;
-  scene.add(group);group.name='caveira';return group;
+  scene.add(group);group.name='caveira';
+  const bounds=new THREE.Box3().setFromObject(group),size=bounds.getSize(new THREE.Vector3()),at=bounds.getCenter(new THREE.Vector3());
+  collisionBox(at.toArray(),size.toArray());return group;
 }
 for(let i=0;i<5;i++){
  const a=-Math.PI/2+i*Math.PI*2/5;
@@ -251,24 +265,38 @@ function rock(x,z,size=.35,y=.08){part(geo.rock,pick(palette.stone),[x,y,z],[siz
 const familiarPavers=[];
 function paving(x,z,w=.75){
  const m=pick(palette.stone),depth=range(.45,.7),yaw=range(-.1,.1);box(m,[x,.06,z],[w,.12,depth],[0,yaw,0]);
+ collisionBox([x,.06,z],[w,.12,depth],[0,yaw,0],true);
  familiarPavers.push({x,z,width:w,depth,yaw});
 }
 // Path from cabin to circle, plus front stairs.
+navigationKind='ground';
 for(let j=0;j<5;j++)for(let i=0;i<3;i++)paving(-4.7+i*.61+j*.22,-1.1+j*.60,.59);
 for(let j=0;j<3;j++){box(pick(palette.stone),[-1.1,-.15-j*.20,5.07+j*.29],[2.0,.22,.48]);}
 for(let i=0;i<9;i++)paving(-1.4+(i%3)*.62,3.47+Math.floor(i/3)*.55,.60);
 
-function wall(x,z,length,axis='x',height=.65){
+navigationKind=null;
+function wall(x,z,length,axis='x',height=.65,gap=null){
+ const lo=z-(length+.08)/2,hi=z+(length+.08)/2;
+ if(gap&&axis==='z'){
+  for(const [a,b] of [[lo,Math.min(hi,gap.min)],[Math.max(lo,gap.max),hi]])if(b>a)collisionBox([x,height/2+.01,(a+b)/2],[.43,height+.05,b-a]);
+ }else collisionBox([x,height/2+.01,z],axis==='x'?[length+.08,height+.05,.43]:[.43,height+.05,length+.08]);
  const n=Math.round(length/.56);
  for(let row=0;row<Math.ceil(height/.25);row++)for(let i=0;i<n;i++){
- const offset=(i-(n-1)/2)*.56+(row%2)*.07;
- box(pick(palette.wall),[x+(axis==='x'?offset:0),.14+row*.25,z+(axis==='z'?offset:0)],axis==='x'?[.535,.23,.40]:[.40,.23,.535],[range(-.025,.025),range(-.02,.02),range(-.02,.02)]);
+  const offset=(i-(n-1)/2)*.56+(row%2)*.07,px=x+(axis==='x'?offset:0),pz=z+(axis==='z'?offset:0);
+  // Consume the original four random draws even for a removed stone. Nothing
+  // downstream (cabin, plants, lily pads) changes its authored random placement.
+  const m=pick(palette.wall),rotation=[range(-.025,.025),range(-.02,.02),range(-.02,.02)];
+  if(gap&&axis==='z'){
+   const a=pz-.535/2,b=pz+.535/2;
+   for(const [start,end] of [[a,Math.min(b,gap.min)],[Math.max(a,gap.max),b]])if(end-start>.025)box(m,[px,.14+row*.25,(start+end)/2],[.40,.23,end-start],rotation);
+  }else box(m,[px,.14+row*.25,pz],axis==='x'?[.535,.23,.40]:[.40,.23,.535],rotation);
  }
 }
 wall(-4.1,4.4,2.2,'x',.85);wall(1.65,4.9,3.25,'x',.50);wall(-5.65,2.9,2.6,'z',.65);
-wall(3.85,2.3,3.3,'z',.58);wall(3.9,-2.45,2.1,'z',.7);
+wall(3.85,2.3,3.3,'z',.58);wall(3.9,-2.45,2.1,'z',.7,{min:-2.50,max:-.08});
 
 // Cabana discreta: madeira, alvenaria, telhas e uma janela quente.
+collisionBox([-4.45,1.34,-4.19],[3.49,2.68,2.04]);
 wall(-4.45,-3.65,3.15,'x',2.25);
 box(palette.darkWood,[-4.45,1.1,-3.82],[3.32,2.3,.32]);
 for(let i=0;i<9;i++)box(pick(palette.wall),[-5.89+i*.36,1.12,-3.58],[.34,2.18,.12]);
@@ -281,7 +309,9 @@ for(const x of [-5.28,-4.26])box(palette.woodLight,[x,1,-3.29],[.13,2.04,.15]);
 box(palette.woodLight,[-4.77,2,-3.29],[1.12,.15,.16]);
 beam([-5.12,.40,-3.28],[-4.43,1.55,-3.28],.08,palette.darkWood);
 sphere(palette.brass,[-4.44,.95,-3.24],[.046,.046,.04]);
+navigationKind='ground';
 for(let j=0;j<3;j++)box(pick(palette.stone),[-4.77,.065+j*.10,-2.55-j*.23],[1.45,.14,.44]);
+navigationKind=null;
 box(palette.wood,[-3.45,1.48,-3.31],[.90,1.05,.12]);
 box(new THREE.MeshBasicMaterial({color:'#ffad48',toneMapped:false}),[-3.45,1.48,-3.24],[.69,.80,.025],undefined,false);
 box(palette.wood,[-3.45,1.48,-3.20],[.07,.89,.07]);box(palette.wood,[-3.45,1.48,-3.20],[.75,.07,.07]);
@@ -308,6 +338,7 @@ beam([-2.75,cabinTop(cabinFront),cabinFront],[-2.75,cabinTop(cabinRear),cabinRea
 
 // Old rear arch assembled with separate voussoirs.
 for(const x of [-.93,.93]){
+ collisionBox([x,.98,-4.7],[.46,1.96,.60]);
  for(let row=0;row<7;row++)for(let i=0;i<2;i++)box(pick(palette.wall),[x+(i-.5)*.22,.16+row*.27,-4.7],[.215,.25,.55],[0,range(-.035,.035),0]);
 }
 for(let i=0;i<11;i++){
@@ -315,19 +346,27 @@ for(let i=0;i<11;i++){
  box(pick(palette.wall),[Math.cos(a)*.94,1.83+Math.sin(a)*.94,-4.7],[.30,.41,.56],[0,0,a-Math.PI/2]);
 }
 wall(-1.67,-4.7,.95,'x',1.2);wall(1.64,-4.7,.98,'x',1.15);
+// The arch remains a visual portal; this round does not introduce traversal.
+collisionBox([0,1.20,-4.88],[1.40,2.4,.10]);
 const gardenPortal=createPortalSurface('garden-portal-recess');scene.add(gardenPortal.mesh);
 // Pergola behind: taller rear silhouette and hanging flowers.
-for(const x of [-2.55,1.95])box(palette.wood,[x,1.71,-5.35],[.15,3.42,.15]);
+for(const x of [-2.55,1.95]){box(palette.wood,[x,1.71,-5.35],[.15,3.42,.15]);collisionBox([x,1.71,-5.35],[.16,3.42,.16]);}
 box(palette.wood,[-.3,3.35,-5.35],[4.8,.18,.21]);
 for(let i=0;i<8;i++)box(palette.darkWood,[-2.5+i*.63,3.42,-5.15],[.12,.12,.65]);
 
-// Wooden bridge in the rear right, no controls or interactions.
-for(let i=0;i<12;i++)box(i%3?palette.wood:palette.woodLight,[4.35,.18,-2.20+i*.17],[2.25,.12,.153],[0,0,range(-.012,.012)]);
-for(const x of [3.4,5.32]){
- for(const z of [-2.35,-.37])box(palette.wood,[x,.66,z],[.14,1.07,.14]);
- beam([x,.93,-2.35],[x,.93,-.37],.10);beam([x,.53,-2.35],[x,.53,-.37],.075);
+// Pier: continuous deck from the bank, open shore entrance and side rails.
+// Keep twelve planks and the same random draws; only the local connection moves.
+navigationKind='bridge';
+for(let i=0;i<12;i++)box(i%3?palette.wood:palette.woodLight,[4.1625,.18,-2.20+i*.17],[2.625,.12,.153],[0,0,range(-.012,.012)]);
+navigationKind='solid';
+for(const z of [-2.22,-.32]){
+ for(const x of [2.95,5.32])box(palette.wood,[x,.66,z],[.14,1.07,.14]);
+ beam([2.95,.93,z],[5.32,.93,z],.10);beam([2.95,.53,z],[5.32,.53,z],.075);
 }
+// The water end is protected; the bank end intentionally remains open.
+beam([5.32,.93,-2.22],[5.32,.93,-.32],.10);beam([5.32,.53,-2.22],[5.32,.53,-.32],.075);
 
+navigationKind=null;
 const lanternResponders=[];
 function lantern(x,y,z,power=12){
  box(palette.iron,[x,y-.26,z],[.34,.09,.34]);box(palette.iron,[x,y+.23,z],[.37,.07,.37]);
@@ -340,6 +379,7 @@ function lantern(x,y,z,power=12){
  lanternResponders.push({light,core,glass,baseIntensity:light.intensity,baseColor:core.color.clone(),baseOpacity:glass.opacity});
 }
 // Six local lamps: each really lights the adjacent ground and plants.
+for(const [x,z,h,w] of [[-5.25,2.6,2,.19],[2.92,3.75,1.4,.20],[-2.55,4.55,1.32,.22]])collisionBox([x,h/2,z],[w,h,w]);
 box(palette.wood,[-5.25,1,2.6],[.19,2,.19]);lantern(-5.25,1.92,2.6,16);
 box(palette.wood,[2.92,.7,3.75],[.20,1.4,.20]);lantern(2.92,1.4,3.75,16);
 box(palette.wood,[-2.55,.66,4.55],[.22,1.32,.22]);lantern(-2.55,1.33,4.55,13);
@@ -349,12 +389,15 @@ function candle(x,z,y=.29){
  part(geo.cone,palette.warm,[x,y+h+.041,z],[.023,.085,.023],undefined,false);
 }
 for(const [x,z] of [[-2.50,.02],[1.86,1.88],[-1.38,2.57]]){
+ collisionCylinder(x,.43,z,.19,.34);
  for(let i=0;i<3;i++)candle(x+range(-.16,.16),z+range(-.14,.14));
  const light=new THREE.PointLight('#ffb35c',2.3,1.6,2);light.position.set(x,.65,z);scene.add(light);
 }
 
 // Vegetation: deliberately planted banks, clear central disc and walking paths.
 function bush(x,z,s=.55,y=.10){
+ // Low foliage is soft decoration, not an invisible wall across the garden.
+ if(s>=1.20){const collisionHeight=Math.max(.70,.48*s);collisionCylinder(x,.14+collisionHeight/2,z,.27*s,collisionHeight);}
  const m=pick(palette.leaf),foliage=foliageShapes[Math.abs(Math.round(x*13+z*7))%3];
  for(let i=0;i<42;i++){
   const a=i*2.4;const d=range(.05,.38)*s;
@@ -429,6 +472,7 @@ for(let i=0;i<13;i++){
 }
 // Background trees are restrained silhouettes; no random object pile.
 for(const [x,z,h] of [[-5.9,-5,3.6],[2.8,-5.4,4.2],[4.4,-5.1,3.3]]){
+ collisionCylinder(x,h*.37,z,.12,h*.74);
  part(geo.cylinder,palette.darkWood,[x,h*.37,z],[.09,h*.74,.12]);
  for(let j=0;j<5;j++){
   const a=j*2.4;
@@ -510,21 +554,40 @@ for(const {g,m,shadow,matrices} of batches.values()){
  matrices.forEach((matrix,i)=>inst.setMatrixAt(i,matrix));
  inst.castShadow=shadow;inst.receiveShadow=true;inst.computeBoundingSphere();scene.add(inst);
 }
+let navigation=null;
+try {
+ navigation=await createGardenNavigation({surfaces:navigationSurfaces,obstacles:navigationObstacles,outline,waterOutline:lakeOutline.getPoints(24).map(p=>[p.x,-p.y]),start:witch.root.position});
+ witch.setNavigation(navigation);
+} catch(error){console.warn('Exploração física indisponível; usando o limite anterior.',error);}
 const ritual=createRitual({scene,character:witch,skulls:scene.children.filter(o=>o.name==='caveira'),hint:document.querySelector('#meditate-hint')});
 const environment=createLivingGarden({scene,waterMesh,waterMaterial:water,rippleMaterial,lanterns:lanternResponders});
 const familiar=createFamiliar({scene,pavers:familiarPavers});
-let ritualStatus={state:'inactive'},veil;
-const scrying=createScryingPond({scene,renderer,witch,waterMesh,waterMaterial:water,isRitualInactive:()=>ritualStatus.state==='inactive'&&!veil?.active()});
+let ritualStatus={state:'inactive'},veil,cabin=null,cabinTravel=null;
+const scrying=createScryingPond({scene,renderer,witch,waterMesh,waterMaterial:water,isRitualInactive:()=>ritualStatus.state==='inactive'&&!veil?.active()&&(!cabinTravel||cabinTravel.isGarden()&&!cabinTravel.busy())});
 witch.setInteraction(scrying);
-veil=createVeil({scene,camera,renderer,witch,familiar,skulls:scene.children.filter(o=>o.name==='caveira'),portal:gardenPortal,environment,lanterns:lanternResponders,canEnter:()=>ritualStatus.state==='inactive'&&!scrying.active()});
+veil=createVeil({scene,camera,renderer,witch,familiar,skulls:scene.children.filter(o=>o.name==='caveira'),portal:gardenPortal,environment,lanterns:lanternResponders,canEnter:()=>ritualStatus.state==='inactive'&&!scrying.active()&&(!cabinTravel||cabinTravel.isGarden()&&!cabinTravel.busy())});
 witch.setAstralController(veil);
-const pipeline=createRenderPipeline({renderer,scene,camera,beforeRender:()=>scrying.renderVision()});
+const pipeline=createRenderPipeline({renderer,scene,camera,beforeRender:()=>!cabinTravel||cabinTravel.isGarden()?scrying.renderVision():0});
+try{
+ cabin=await createCabinInterior();
+ cabinTravel=createCabinTravel({witch,cabin,gardenScene:scene,gardenCamera:camera,gardenNavigation:navigation,pipeline,hint:document.querySelector('#meditate-hint'),canTravel:()=>ritualStatus.state==='inactive'&&!veil.active()&&!scrying.active()});
+ witch.setWorldMeditationAllowed(()=>cabinTravel.isGarden()&&!cabinTravel.busy());
+ witch.setInteraction({
+  active:()=>cabinTravel.busy()||cabinTravel.isGarden()&&scrying.active(),
+  toggle:()=>{if(!cabinTravel.busy()&&cabinTravel.isGarden())scrying.toggle();},
+  canStart:position=>cabinTravel.canStart(position)||cabinTravel.isGarden()&&!cabinTravel.busy()&&scrying.canStart(position),
+  start:()=>cabinTravel.canStart(witch.root.position)?cabinTravel.start():cabinTravel.isGarden()&&!cabinTravel.busy()?scrying.start():false,
+  label:()=>cabinTravel.canStart(witch.root.position)?cabinTravel.label():'E — Contemplar lago',
+  snapshot:scrying.snapshot,projectWalk:scrying.projectWalk,
+ });
+}catch(error){console.warn('A cabana não pôde ser preparada; o Jardim continua disponível.',error);}
 // Fixed orthographic composition; only the frustum adapts to viewport dimensions.
 function render(){
  const width=innerWidth,height=innerHeight,aspect=width/height;
  const halfHeight=Math.max(6.65,9.25/aspect);
  camera.left=-halfHeight*aspect;camera.right=halfHeight*aspect;
  camera.top=halfHeight;camera.bottom=-halfHeight;camera.updateProjectionMatrix();
+ cabin?.setSize(width,height);
  sky.width=width;sky.height=height;
  const bg=sk.createLinearGradient(0,0,0,height);bg.addColorStop(0,'#10162f');bg.addColorStop(.6,'#16213a');bg.addColorStop(1,'#080f1d');
  sk.fillStyle=bg;sk.fillRect(0,0,width,height);
@@ -548,17 +611,29 @@ render();
 
 // Tempo real; a configuração da câmera, fundo e viewport permanece no resize.
 let previousTime=null;
+function simulate(dt){
+ cabinTravel?.update(dt);
+ let snapshot,ritualSnapshot;
+ if(!cabinTravel||cabinTravel.isGarden()){
+  veil.prepare(dt);gardenPortal.update(dt);const pond=scrying.update(dt);cabinTravel?.lock();
+  snapshot=witch.update(dt);ritualSnapshot=ritual.update(dt,snapshot);ritualStatus=ritualSnapshot;
+  environment.update(dt,snapshot,ritualSnapshot,pond);familiar.update(dt,snapshot,ritualSnapshot,{...pond,veilTarget:veil.observation()});veil.present(dt);
+ }else{
+  cabin.update(dt);cabinTravel.lock();snapshot=witch.update(dt);ritualSnapshot=ritualStatus;
+ }
+ cabinTravel?.present();return {snapshot,ritualSnapshot};
+}
 function animate(now){
  let remaining=previousTime===null?0:Math.max(0,(now-previousTime)/1000);previousTime=now;
  let snapshot,ritualSnapshot;
  // Subpassos preservam o tempo real e o apoio dos pés mesmo em frames lentos.
- do {const dt=Math.min(remaining,1/30);veil.prepare(dt);gardenPortal.update(dt);const pond=scrying.update(dt);snapshot=witch.update(dt);ritualSnapshot=ritual.update(dt,snapshot);ritualStatus=ritualSnapshot;environment.update(dt,snapshot,ritualSnapshot,pond);familiar.update(dt,snapshot,ritualSnapshot,{...pond,veilTarget:veil.observation()});veil.present(dt);remaining-=dt;} while(remaining>1e-7);
+ do {const dt=Math.min(remaining,1/30);({snapshot,ritualSnapshot}=simulate(dt));remaining-=dt;} while(remaining>1e-7);
  pipeline.render();
  const pond=scrying.snapshot();Object.assign(renderer.domElement.dataset,{scryState:pond.state,scryAmount:pond.amount.toFixed(4),scryReveal:pond.reveal.toFixed(4),scryTargets:pond.targetCount});
  const spirit=veil.snapshot();Object.assign(renderer.domElement.dataset,{veilState:spirit.state,veilAmount:spirit.amount.toFixed(4),projectionX:spirit.x.toFixed(4),projectionZ:spirit.z.toFixed(4),lifeline:spirit.distance.toFixed(4)});
  const cat=familiar.snapshot();Object.assign(renderer.domElement.dataset,{catState:cat.state,catX:cat.x.toFixed(4),catZ:cat.z.toFixed(4),ambientParticles:14});
- Object.assign(renderer.domElement.dataset,{characterState:snapshot.state,characterX:snapshot.x.toFixed(4),characterZ:snapshot.z.toFixed(4),characterSpeed:snapshot.speed.toFixed(4),meditation:snapshot.meditation.toFixed(4),phase:snapshot.phase.toFixed(4)});
- Object.assign(renderer.domElement.dataset,{ritualState:ritualSnapshot.state,ritualTime:ritualSnapshot.elapsed.toFixed(4),levitation:ritualSnapshot.height.toFixed(4),activeSkulls:ritualSnapshot.litSkulls,ritualLines:ritualSnapshot.lines.toFixed(4),ritualCircle:ritualSnapshot.circle.toFixed(4)});
+ const world=cabinTravel?.snapshot();Object.assign(renderer.domElement.dataset,{world:world?.world??'garden',worldTransition:world?.phase??'idle',cabinVisits:world?.visits??0,characterState:snapshot.state,characterX:snapshot.x.toFixed(4),characterZ:snapshot.z.toFixed(4),characterY:witch.root.position.y.toFixed(4),characterSpeed:snapshot.speed.toFixed(4),meditation:snapshot.meditation.toFixed(4),phase:snapshot.phase.toFixed(4),navigation:navigation?'rapier':'legacy',navigationColliders:(world?.world==='cabin'?cabin.navigation:navigation)?.snapshot().colliders??0});
+ Object.assign(renderer.domElement.dataset,{ritualState:ritualSnapshot.state,ritualTime:(ritualSnapshot.elapsed??0).toFixed(4),levitation:(ritualSnapshot.height??0).toFixed(4),activeSkulls:ritualSnapshot.litSkulls??0,ritualLines:(ritualSnapshot.lines??0).toFixed(4),ritualCircle:(ritualSnapshot.circle??0).toFixed(4)});
 }
 document.addEventListener('visibilitychange',()=>{previousTime=null;renderer.setAnimationLoop(document.hidden?null:animate);});
 renderer.setAnimationLoop(animate);

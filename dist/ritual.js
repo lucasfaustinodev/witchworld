@@ -114,7 +114,8 @@ export function createRitual({scene,character,skulls,hint}){
       if(exitElapsed>=1.05){state='inactive';height=0;character.root.position.y=groundY;character.standUp();}
     }
     const visible=state!=='inactive'&&state!=='pause';group.visible=visible;
-    character.root.position.y=groundY+height;
+    // Ground support belongs to exploration whenever no ritual is running.
+    if(state!=='inactive')character.root.position.y=groundY+height;
     const pulse=1+Math.sin(clock*1.9)*.060;
     const presentation=vfx.update({clock,state,elapsed,pose,values,height,exitElapsed});
     halo.material.opacity=values.energy*.65*pulse;halo.scale.setScalar(.55+values.energy*.70);

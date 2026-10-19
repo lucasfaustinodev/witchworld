@@ -1,3 +1,17 @@
+# Exploração física — atualização de 14/10/2026
+
+A prévia agora usa Rapier 0.21.0 local para circulação pelo solo acessível, colisões e apoio das botas nas alturas existentes. WASD/setas e Shift foram preservados (1,10 / 1,76 unidade/s). E continua contextual no círculo/lago e V mantém o Véu.
+
+`garden-navigation.js` concentra a física; `main.js` registra superfícies e proxies invisíveis com os transforms do cenário; `character.js` aplica contato independente das solas e ajuste de quadril. O ritual só escreve a altura quando está ativo. Não há novas luzes, passes, meshes visuais ou mudanças no layout.
+
+A biblioteca oficial ESM está em `vendor/rapier/`, com licença Apache-2.0. Não requer build, CDN ou instalação no navegador. Se WebAssembly falhar ao inicializar, a circulação anterior é preservada como fallback e um aviso é registrado no console.
+
+Validação automatizada: três ciclos de ritual/Véu/vidência, rotas físicas aos pontos principais, Shift aproximadamente 1,6x, bloqueios de sólidos/água/bordas e apoio das solas. Sem browser automation disponível, a aparência WebGL/mobile e a animação devem ser revisadas na prévia. O píer recebeu abertura local na mureta, tablado conectado à margem, corrimãos laterais e colisão contínua para as frestas entre tábuas. A bruxa pode entrar, chegar à ponta e retornar. A cabana continua sem interior e o portal sem travessia.
+
+Os registros abaixo documentam etapas anteriores; o limite antigo de raio 1,36 pertence ao fallback, não à exploração atual com Rapier.
+
+---
+
 # Jardim ritualístico — Bloco 4
 
 Polimento visual controlado sobre os Blocos 1–3 aprovados. A versão do ChatGPT Sites
@@ -737,3 +751,11 @@ Game Studio QA desta recuperação: três ciclos completos por viewport desktop/
 three.quarks foi avaliado na rodada anterior e não é necessário para esta conjuração fixa. Recursos nativos atendem fluxo/formas, preservam a integração existente e reduzem draws através de batching. Compatibilidade/custo de Quarks com Three r186 não foram benchmarkados; nenhuma alegação de ganho da biblioteca.
 
 Limites: chamas têm volume aparente, não simulação volumétrica. Desempenho/overdraw em GPU mobile real e aprovação artística continuam sujeitos à avaliação do usuário. A publicação usa exclusivamente o repositório interno e o endereço desta prévia do GPT.
+
+## Cabana / hub interior — 14/10/2026
+
+E na escada/porta exterior entra numa cena própria de 10,4 × 8,4, com centro livre, biblioteca/estudo, cama completa, lareira, meditação e armazenamento. E na passagem frontal interna retorna ao Jardim. A mesma bruxa e movimentação/Shift são reutilizadas; entrada/saída bloqueiam input durante um fade de 1,05 s. Câmera exterior preservada e câmera interna com a mesma direção isométrica. Sem sistema de progressão ou novas habilidades.
+
+`cabin-interior.js` agrupa 786 instâncias em 43 malhas (20.132 triângulos de cenário). Com a bruxa: 75 malhas / 34.788 triângulos armazenados. Sete luzes internas, uma com sombras; nenhuma luz exterior alterada. `cabin-travel.js` coordena cena, parent, posição, apoios e colisões. Rapier/WASM compartilhado com mundos separados; 17 colisores internos. Um único renderer/composer, com seleção emissiva em cache por cena, sem novos passes/RenderTargets ou listeners de input.
+
+Verificação: três ciclos completos de entrada/saída com controles reais em Node, navegação interna, Shift 1,6×, E/V rápido, colisões, ritual/Véu/vidência após voltar. Geometria e transforms exteriores idênticos à v42. Enquadramento matemático desktop/portrait e fluxo do compositor verificados. Nesta sessão não havia navegador de playtest: sem screenshot/vídeo WebGL, FPS GPU ou validação de console de browser. A projeção CPU de composição é complemento, não captura do jogo. Relatório completo no código-fonte: `docs/cabin-interior.md`. Publicação exclusivamente na prévia do GPT; GitHub/Vercel não alterados.

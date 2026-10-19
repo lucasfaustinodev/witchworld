@@ -12,7 +12,9 @@
     "test": "node --test tests/*.test.ts",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173 --strictPort",
-    "build:publish": "npm run typecheck && vite build --outDir=../dist"
+    "build:publish": "npm run typecheck && npm run build:game",
+    "build:game": "tsc -p game/tsconfig.json && vite build --config game/vite.config.mts",
+    "test:game": "node --test game/tests/*.test.ts"
   },
   "dependencies": {
     "react": "19.3.1",

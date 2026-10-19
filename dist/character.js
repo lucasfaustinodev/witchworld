@@ -174,7 +174,7 @@ export function createWitch({ hint }) {
     legGroup.attach(upperLeg);legGroup.attach(lowerLeg);legGroup.attach(shoe);
     const initial=V(side*.13,.052,.02).applyAxisAngle(V(0,1,0),root.rotation.y).add(root.position);
     limbs.push({side,upperArm,lowerArm,hand,upperLeg,lowerLeg,shoe,foot:initial.clone(),from:initial.clone(),to:initial.clone(),prevU:1,swing:false,
-      swingU:0,settling:false,footYaw:root.rotation.y,fromYaw:root.rotation.y,toYaw:root.rotation.y,local:V(),hip:V(),joint:V(),ankle:V(),shoulder:V(),elbow:V(),wrist:V()});
+      swingU:0,settling:false,footYaw:root.rotation.y,fromYaw:root.rotation.y,toYaw:root.rotation.y,footNormal:V(0,1,0),toNormal:V(0,1,0),local:V(),hip:V(),joint:V(),ankle:V(),shoulder:V(),elbow:V(),wrist:V()});
   }
   // A waist pivot separates shoulder counterrotation from pelvis/cloth motion.
   // Reparenting keeps every rest-space position and the original geometry.
@@ -208,7 +208,7 @@ export function createWitch({ hint }) {
   // Reused work vectors and exact critically damped springs: no frame-rate-dependent lerp.
   const requested=V(),displacement=V(),previous=V(),fromCenter=V(),attempted=V(),normal=V(),oldVelocity=V(),forward=V(),right=V(),neutral=V(),seat=V();
   const spring=()=>({value:0,velocity:0});
-  const pitch=spring(),roll=spring(),twist=spring(),hatPitch=spring(),hatRoll=spring(),clothLag=spring(),clothSide=spring(),hairLag=spring(),weightShift=spring(),shoulderSpring=spring();
+  const pitch=spring(),roll=spring(),twist=spring(),hatPitch=spring(),hatRoll=spring(),clothLag=spring(),clothSide=spring(),hairLag=spring(),weightShift=spring(),shoulderSpring=spring(),groundPelvis=spring();
   function follow(s,target,frequency,dt){
     const offset=s.value-target,j=s.velocity+frequency*offset,e=Math.exp(-frequency*dt);
     s.value=target+(offset+j*dt)*e;s.velocity=(s.velocity-frequency*j*dt)*e;return s.value;
@@ -222,12 +222,37 @@ export function createWitch({ hint }) {
     return {t,fold:.63-.235*Math.pow(t,.85)+.012*Math.cos(a*2)*Math.sin(t*Math.PI),spread:smooth(t)};
   });
   const capeWeights=Array.from({length:capeGeo.attributes.position.count},(_,i)=>(.93-capeBase[i*3+1])/.55);
+  let navigation=null;
+  const groundSample={height:.245,normal:V(0,1,0),valid:true},slopeNormal=V(0,1,0);
+  const footClearance=.070;
+  const soleSample={height:0,normal:V(0,1,0),valid:false};
+  const soleOffsets=[[-.060,.155],[.060,.155],[-.060,-.068],[.060,-.068]];
+  function footSupport(target,out=groundSample){
+    if(navigation){
+      navigation.sampleGround(target.x,target.z,root.position.y,out);
+      // Test the sole footprint as well as the ankle. A center-only ray lets the
+      // toe sink into the raised curb before the next step is scheduled.
+      const sin=Math.sin(root.rotation.y),cos=Math.cos(root.rotation.y);
+      if(out.valid)for(const [x,z] of soleOffsets){
+        navigation.sampleGround(target.x+x*cos+z*sin,target.z+z*cos-x*sin,root.position.y,soleSample);
+        if(soleSample.valid&&soleSample.height>out.height){out.height=soleSample.height;out.normal.copy(soleSample.normal);}
+      }
+      return out;
+    }
+    out.height=root.position.y-.010;out.normal.set(0,1,0);out.valid=true;return out;
+  }
+  function landing(l,target){
+    if(navigation)navigation.constrainFoot(l.foot,target,root.position.y);
+    const support=footSupport(target);
+    if(!support.valid){target.x=l.foot.x;target.z=l.foot.z;footSupport(target);}
+    target.y=groundSample.height+footClearance;l.toNormal.copy(groundSample.normal);return target;
+  }
   function startStep(l,target,settling=false){
-    l.from.copy(l.foot);l.to.copy(target);l.to.y=root.position.y+groundAnkle;
+    l.from.copy(l.foot);l.to.copy(landing(l,target));
     l.fromYaw=l.footYaw;l.toYaw=root.rotation.y;l.swingU=0;l.swing=true;l.settling=settling;
   }
   let astralController=null,astralPose={locked:false,meditation:0};
-  let meditationExitHandler=null,interaction=null,externalFocus={locked:false,weight:0,yaw:root.rotation.y};
+  let meditationExitHandler=null,interaction=null,worldAllowsMeditation=()=>true,externalFocus={locked:false,weight:0,yaw:root.rotation.y};
   function standUp(){
     if(state!=='meditate')return;
     state='rising';transitionTime=0;transitionStart=meditation;transitionTarget=0;keys.clear();
@@ -242,7 +267,7 @@ export function createWitch({ hint }) {
     if(interaction?.active()){interaction.toggle();return;}
     if(state==='meditate'){
       if(!meditationExitHandler?.())standUp();
-    }else if((state==='idle'||state==='walk'||state==='stop')&&root.position.distanceTo(center)<.38){
+    }else if(worldAllowsMeditation()&&(state==='idle'||state==='walk'||state==='stop')&&root.position.distanceTo(center)<.38){
       state='sitting';transitionTime=0;transitionStart=meditation;transitionTarget=1;
       centeringFrom.copy(root.position);centeringYaw=root.rotation.y;velocity.set(0,0,0);keys.clear();
     }else if((state==='idle'||state==='walk'||state==='stop')&&interaction?.canStart(root.position)){interaction.start();}
@@ -254,6 +279,7 @@ export function createWitch({ hint }) {
   function update(dt){
     clock+=dt;
     const inTransition=state==='sitting'||state==='rising',locked=inTransition||state==='meditate'||externalFocus.locked||astralPose.locked;
+    const terrainPose=!inTransition&&state!=='meditate'&&!astralPose.locked;
     if(astralPose.locked)meditation=astralPose.meditation;
     if(inTransition){
       transitionTime+=dt;
@@ -279,13 +305,15 @@ export function createWitch({ hint }) {
       displacement.copy(requested).multiplyScalar(dt).addScaledVector(normal.copy(velocity).sub(requested),(1-decay)/k);
       velocity.lerp(requested,1-decay);
       if(velocity.length()<.003)velocity.set(0,0,0);
-      previous.copy(root.position);root.position.add(displacement);
+      previous.copy(root.position);
+      if(navigation)navigation.move(root.position,displacement,velocity,dt);
+      else root.position.add(displacement);
       fromCenter.copy(root.position).sub(center);fromCenter.y=0;
-      if(fromCenter.length()>1.36){
+      if(!navigation&&fromCenter.length()>1.36){
         if(interaction?.projectWalk){attempted.copy(root.position);root.position.copy(interaction.projectWalk(attempted));normal.copy(attempted).sub(root.position).normalize();const outward=velocity.dot(normal);if(outward>0)velocity.addScaledVector(normal,-outward);}
         else {fromCenter.setLength(1.36);root.position.copy(center).add(fromCenter);normal.copy(fromCenter).normalize();const outward=velocity.dot(normal);if(outward>0)velocity.addScaledVector(normal,-outward);}
       }
-      const actual=root.position.distanceTo(previous);speed=actual/Math.max(dt,.00001);distance+=actual;gaitCycle+=actual/stride;
+      const actual=Math.hypot(root.position.x-previous.x,root.position.z-previous.z);speed=actual/Math.max(dt,.00001);distance+=actual;gaitCycle+=actual/stride;
       if(speed>.025){
         const target=Math.atan2(velocity.x,velocity.z),angle=angleDelta(target,root.rotation.y);
         const turn=THREE.MathUtils.clamp(angle*(1-Math.exp(-11*dt)),-8*dt,8*dt);
@@ -293,7 +321,7 @@ export function createWitch({ hint }) {
         state=requested.lengthSq()?'walk':'stop';stoppedElapsed=0;
       }else {state=requested.lengthSq()&&velocity.length()>.03?'stop':'idle';stoppedElapsed+=dt;}
       forwardAcceleration=dt>0?THREE.MathUtils.clamp((velocity.x-oldVelocity.x)*Math.sin(root.rotation.y)/dt+(velocity.z-oldVelocity.z)*Math.cos(root.rotation.y)/dt,-8,8):0;
-    }else{velocity.set(0,0,0);stoppedElapsed+=dt;}
+    }else{velocity.set(0,0,0);stoppedElapsed+=dt;navigation?.sync(root.position);}
     walkWeight=damp(walkWeight,locked?0:Math.min(1,speed/.85),speed>.02?13:9,dt);
     fast=damp(fast,smooth((speed-1.10)/.66),12,dt);stride=.64+.12*fast;
     const phase=gaitCycle*Math.PI*2;
@@ -301,7 +329,12 @@ export function createWitch({ hint }) {
     const weight=follow(weightShift,support*walkWeight,17,dt);
     const breath=Math.sin(clock*1.9)*.0027*(1-meditation*.7);
     const bob=(-.009-.005*Math.cos(phase*2))*walkWeight;
-    body.position.set(weight*mix(.048,.064,fast)*(1-meditation),-.34*meditation+breath+bob,0);
+    // On a stair/platform seam, bend at the pelvis while one foot still supports
+    // the lower surface. Do not stretch a leg or drag its planted boot upward.
+    let lowest=root.position.y-.010;
+    if(navigation&&terrainPose){lowest=Math.min(limbs[0].foot.y,limbs[1].foot.y)-footClearance;}
+    const pelvis=follow(groundPelvis,!terrainPose?0:THREE.MathUtils.clamp(lowest+.010-root.position.y,-.12,0),20,dt);
+    body.position.set(weight*mix(.048,.064,fast)*(1-meditation),-.34*meditation+breath+bob+pelvis*(1-meditation),0);
     const preparation=smooth(Math.min(transitionTime/(state==='rising'?.95:1.15),1));
     const lean=follow(pitch,mix(.036,.074,fast)*walkWeight+forwardAcceleration*.0055,13,dt);
     const bank=follow(roll,weight*.040-turnRate*.011*walkWeight,15,dt);
@@ -358,13 +391,14 @@ export function createWitch({ hint }) {
       const l=limbs[index],side=l.side;
       const gait=(distance/stride+index*.5)%1;
       neutral.set(side*.13,groundAnkle,.025).applyAxisAngle(up,root.rotation.y).add(root.position);
+      if(navigation&&terrainPose){footSupport(neutral);neutral.y=groundSample.height+footClearance;}
       if(speed>.02&&!locked){
         if(l.swing&&!l.settling){
           // Retarget only the airborne foot during a direction change. Freeze its
           // destination before contact; the support foot keeps its world position.
           if(l.swingU<.72&&Math.abs(angleDelta(Math.atan2(velocity.x,velocity.z),l.toYaw))>.12){
             forward.copy(velocity).setY(0).normalize();right.set(forward.z,0,-forward.x);
-            seat.copy(root.position).addScaledVector(forward,Math.min(.33+.025*fast,stride*swingFraction*(1-l.swingU)+.12)).addScaledVector(right,side*.13);seat.y=root.position.y+groundAnkle;
+            seat.copy(root.position).addScaledVector(forward,Math.min(.33+.025*fast,stride*swingFraction*(1-l.swingU)+.12)).addScaledVector(right,side*.13);landing(l,seat);
             l.to.lerp(seat,1-Math.exp(-18*dt));l.toYaw+=angleDelta(Math.atan2(forward.x,forward.z),l.toYaw)*(1-Math.exp(-18*dt));
           }
           l.swingU=Math.min(1,l.swingU+speed*dt/(stride*swingFraction));
@@ -379,9 +413,9 @@ export function createWitch({ hint }) {
         l.foot.lerpVectors(l.from,l.to,settle(t));
         l.foot.y+=Math.sin(Math.PI*t)**2*(l.settling?.042:mix(.076,.096,fast));
         l.footYaw=l.fromYaw+angleDelta(l.toYaw,l.fromYaw)*settle(t);
-        if(t>=1){l.foot.copy(l.to);l.swing=false;l.settling=false;}
+        if(t>=1){l.foot.copy(l.to);l.footNormal.copy(l.toNormal);l.swing=false;l.settling=false;}
       }
-      if(locked){l.foot.copy(neutral);l.footYaw=root.rotation.y;l.swing=false;l.settling=false;l.swingU=0;}
+      if(locked){l.foot.copy(neutral);if(navigation&&terrainPose)l.footNormal.copy(groundSample.normal);else l.footNormal.set(0,1,0);l.footYaw=root.rotation.y;l.swing=false;l.settling=false;l.swingU=0;}
       l.prevU=gait;
       const local=l.local.copy(l.foot).sub(root.position).applyAxisAngle(up,-root.rotation.y);
       const hip=l.hip.set(side*.13,.51,0).applyEuler(body.rotation).add(body.position);
@@ -398,7 +432,9 @@ export function createWitch({ hint }) {
       l.shoe.position.x+=Math.sin(bootYaw)*.044*(1-meditation);
       l.shoe.position.z+=.044*(Math.cos(bootYaw)*(1-meditation)+meditation);
       const solePitch=l.swing?Math.sin(l.swingU*Math.PI*2)*.15:0;
-      l.shoe.rotation.set(mix(solePitch,-.22,meditation),bootYaw*(1-meditation)-meditation*side*1.32,-side*.32*meditation);
+      slopeNormal.copy(l.swing?l.toNormal:l.footNormal).applyAxisAngle(up,-l.footYaw);
+      const slopePitch=THREE.MathUtils.clamp(Math.atan2(slopeNormal.z,slopeNormal.y),-.22,.22),slopeRoll=THREE.MathUtils.clamp(-Math.atan2(slopeNormal.x,slopeNormal.y),-.22,.22);
+      l.shoe.rotation.set(mix(solePitch+slopePitch,-.22,meditation),bootYaw*(1-meditation)-meditation*side*1.32,mix(slopeRoll,-side*.32,meditation));
       // Contralateral arms, relaxed elbow flexion and stable head above the moving hips.
       const armSwing=THREE.MathUtils.clamp(-local.z*mix(.70,.90,fast),-.17,.17)*walkWeight;
       const flex=Math.max(0,-armSwing)*.42;
@@ -411,10 +447,10 @@ export function createWitch({ hint }) {
       l.hand.rotation.set(mix(-armSwing*1.8,-.95,meditation),counter*.5*(1-meditation),side*meditation*.45);
     }
     // Only the contextual interaction hint is visible. No HUD or debug buttons.
-    const canMeditate=!locked&&root.position.distanceTo(center)<.38;
+    const canMeditate=worldAllowsMeditation()&&!locked&&root.position.distanceTo(center)<.38;
     hint.hidden=!(canMeditate||state==='meditate');hint.textContent=state==='meditate'?'E — Levantar':'E — Meditar';
-    if(externalFocus.locked){hint.hidden=false;hint.textContent=interaction?.snapshot().state==='SCRY_CLOSING'?'Encerrando…':'E — Encerrar vidência';}
-    else if(!locked&&!canMeditate&&interaction?.canStart(root.position)){hint.hidden=false;hint.textContent='E — Contemplar lago';}
+    if(externalFocus.locked){hint.hidden=false;hint.textContent=externalFocus.label??(interaction?.snapshot().state==='SCRY_CLOSING'?'Encerrando…':'E — Encerrar vidência');}
+    else if(!locked&&!canMeditate&&interaction?.canStart(root.position)){hint.hidden=false;hint.textContent=interaction.label?.()??'E — Contemplar lago';}
     if(astralPose.locked)hint.hidden=true;
     return {state,x:root.position.x,z:root.position.z,speed,meditation,walkWeight,phase};
   }
@@ -422,8 +458,26 @@ export function createWitch({ hint }) {
   skirt.geometry.computeVertexNormals();
   update(0);
   return {root,update,standUp,
+    setWorldMeditationAllowed(test){worldAllowsMeditation=test;},
+    placeAt(position,yaw){
+      // Same actor and animation. Clear world-space support anchors when changing rooms.
+      root.position.copy(position);root.rotation.y=yaw;clearInput();velocity.set(0,0,0);
+      state='idle';meditation=walkWeight=fast=0;turnRate=forwardAcceleration=0;
+      for(const s of [pitch,roll,twist,hatPitch,hatRoll,clothLag,clothSide,hairLag,weightShift,shoulderSpring,groundPelvis]){s.value=0;s.velocity=0;}
+      navigation?.sync(root.position);
+      for(const l of limbs){
+        l.foot.set(l.side*.13,groundAnkle,.025).applyAxisAngle(up,yaw).add(root.position);
+        footSupport(l.foot);l.foot.y=groundSample.height+footClearance;l.from.copy(l.foot);l.to.copy(l.foot);
+        l.footNormal.copy(groundSample.normal);l.toNormal.copy(groundSample.normal);l.footYaw=l.fromYaw=l.toYaw=yaw;l.swing=false;l.settling=false;l.swingU=0;
+      }
+      update(0);
+    },
     isStable:()=>['idle','walk','stop'].includes(state)&&!externalFocus.locked,
     movementInput:()=>screenRight.clone().multiplyScalar(Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'))).addScaledVector(screenUp,Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'))),
+    setNavigation(handler){
+      navigation=handler;navigation?.sync(root.position);
+      for(const l of limbs){footSupport(l.foot);l.foot.y=groundSample.height+footClearance;l.from.copy(l.foot);l.to.copy(l.foot);l.footNormal.copy(groundSample.normal);l.toNormal.copy(groundSample.normal);}
+    },
     setAstralController(handler){astralController=handler;},
     setAstralPose(next){if(next.locked!==astralPose.locked){keys.clear();velocity.set(0,0,0);state='idle';}astralPose=next;if(!next.locked)meditation=0;},
     setInteraction(handler){interaction=handler;},setExternalFocus(next){if(next.locked!==externalFocus.locked){keys.clear();velocity.set(0,0,0);if(state==='walk'||state==='stop')state='idle';}externalFocus=next;},setMeditationExitHandler(handler){meditationExitHandler=handler;}};
