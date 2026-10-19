@@ -1,0 +1,103 @@
+{
+  "source": "Quaternius Fantasy Props MegaKit Standard",
+  "license": "CC0-1.0",
+  "models": [
+    {
+      "name": "Bed_Twin1",
+      "gltfSha256": "fcb79a79d71d1b24b74113f83684d4e4f0c69e9dacc8b5c9078ca88d286d253e"
+    },
+    {
+      "name": "Workbench",
+      "gltfSha256": "518fc5c955def18cfcb781b3b955da0e8edcf4f37830a21561ef32c03ad0397e"
+    },
+    {
+      "name": "Chair_1",
+      "gltfSha256": "9c3e659f25c850990cbf8a4d850b6222110248cd5c1419a2c0f548a312dd8457"
+    },
+    {
+      "name": "Cabinet",
+      "gltfSha256": "43df513943cde0590ca1925c3920ace9d08e4694d51282a1f5ab70b42e79fe44"
+    },
+    {
+      "name": "Chest_Wood",
+      "gltfSha256": "b2022f69b76526fcbbc7f7a8855848beeefa6e8a6f55337d923bce38ed03b2b6"
+    },
+    {
+      "name": "Shelf_Simple",
+      "gltfSha256": "aaddd9bf393cf4ed685a810f1d03cfe2a27dba98c060f889e09a968f91d91106"
+    },
+    {
+      "name": "Book_5",
+      "gltfSha256": "10b082a9984c355bb68e288362bb5e39c62d037ae5a24e3fcec2a5ded4a3b1ec"
+    },
+    {
+      "name": "Book_Stack_1",
+      "gltfSha256": "aac90f5a6859acb1edf12b248e12a914f652e8a0a0af0fa6cee6dda3225a7fd2"
+    },
+    {
+      "name": "Potion_1",
+      "gltfSha256": "fc53caca616741a21790b54a742a4fe3b4b3dfc88f4d50716fa8f65eece5c2ef"
+    },
+    {
+      "name": "Potion_2",
+      "gltfSha256": "42d889170fdad73d6f3f38070ecb0ae1b928de96ce71d78856dcebdbec7d3a15"
+    },
+    {
+      "name": "Potion_4",
+      "gltfSha256": "1040842ccc81da5f3204ed14bbae38e84e73c63abc899ab0e43a29e969bfdd2d"
+    },
+    {
+      "name": "Candle_1",
+      "gltfSha256": "9539cc17bdc7b774ae7adbfe9c148e89f81e3eba09079d7310f0b789113b6cad"
+    },
+    {
+      "name": "Candle_2",
+      "gltfSha256": "4856167e1e1c6c039d9f6d162e7cf6e98586640a04d57ccb759c631d91deab39"
+    },
+    {
+      "name": "Cauldron",
+      "gltfSha256": "3937dcadb9b920ae88d7674009b73e2da6c6d9f73d0f4fe6e79408a04dbffec1"
+    },
+    {
+      "name": "Chandelier",
+      "gltfSha256": "2fa74c8bb413a86430aa0be69ef2d82cc6cdc6d9505567410dc0abf34b37e272"
+    },
+    {
+      "name": "CandleStick_Stand",
+      "gltfSha256": "4255072b144deb6abadaa604cdb52d09a64dfee2df690cd0f1c71c829454380b"
+    }
+  ],
+  "textures": [
+    {
+      "name": "T_Trim_Furniture_BaseColor",
+      "mime": "image/webp",
+      "bytes": 92130,
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "T_Trim_Metal_BaseColor",
+      "mime": "image/webp",
+      "bytes": 70670,
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "T_Trim_Cloth_BaseColor",
+      "mime": "image/webp",
+      "bytes": 63736,
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "T_Trim_Props_BaseColor",
+      "mime": "image/webp",
+      "bytes": 135856,
+      "width": 1024,
+      "height": 1024
+    }
+  ],
+  "bytes": 1484644,
+  "sha256": "5dc4c8fe5cdef071718ffc62835ca19a68125b591bb3953c6c6a228c3ec5d11b",
+  "pipeline": "glTF Transform: prune, dedup, WebP 1024 quality92, unpartition. Original UVs and vertex colors retained. No normal/ORM maps; matte painted finish is set at runtime."
+}

@@ -1,0 +1,1671 @@
+{
+  "format": "witchworld-cabin-layout",
+  "version": 2,
+  "scene": "witchworld-cabin-artpass1-editor-v1",
+  "objects": [
+    {
+      "id": "curtains",
+      "parentId": null,
+      "position": [
+        -4.93,
+        1.85,
+        -1.46
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/plant-001",
+      "parentId": null,
+      "position": [
+        -4.79,
+        1.16,
+        -1.08
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bed-rug",
+      "parentId": null,
+      "position": [
+        -3.7,
+        0,
+        -0.9400000000000001
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bed",
+      "parentId": null,
+      "position": [
+        -3.7,
+        0,
+        -1.08
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bedside",
+      "parentId": null,
+      "position": [
+        -4.51,
+        0,
+        -2.97
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bedside/candle-001",
+      "parentId": "bedside",
+      "position": [
+        -0.14000000000000057,
+        0.86,
+        0.07000000000000028
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bedside/candle-002",
+      "parentId": "bedside",
+      "position": [
+        0.05999999999999961,
+        0.86,
+        0.14000000000000012
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bedside/book-stack-001",
+      "parentId": "bedside",
+      "position": [
+        0.08000000000000007,
+        0.86,
+        -0.1499999999999999
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf",
+      "parentId": null,
+      "position": [
+        -2.5,
+        0,
+        -3.66
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-001",
+      "parentId": "bookshelf",
+      "position": [
+        -0.8300000000000001,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-002",
+      "parentId": "bookshelf",
+      "position": [
+        -0.714,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-003",
+      "parentId": "bookshelf",
+      "position": [
+        -0.5869999999999997,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-004",
+      "parentId": "bookshelf",
+      "position": [
+        -0.45999999999999996,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-005",
+      "parentId": "bookshelf",
+      "position": [
+        -0.3330000000000002,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-006",
+      "parentId": "bookshelf",
+      "position": [
+        -0.19500000000000073,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-007",
+      "parentId": "bookshelf",
+      "position": [
+        -0.04600000000000071,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-008",
+      "parentId": "bookshelf",
+      "position": [
+        0.10299999999999931,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-009",
+      "parentId": "bookshelf",
+      "position": [
+        0.25199999999999934,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-010",
+      "parentId": "bookshelf",
+      "position": [
+        0.4119999999999995,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-011",
+      "parentId": "bookshelf",
+      "position": [
+        0.5829999999999995,
+        0.235,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-012",
+      "parentId": "bookshelf",
+      "position": [
+        -0.8080000000000003,
+        0.745,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-013",
+      "parentId": "bookshelf",
+      "position": [
+        -0.6480000000000001,
+        0.745,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-014",
+      "parentId": "bookshelf",
+      "position": [
+        -0.4770000000000003,
+        0.745,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-015",
+      "parentId": "bookshelf",
+      "position": [
+        -0.3060000000000005,
+        0.745,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-016",
+      "parentId": "bookshelf",
+      "position": [
+        -0.13500000000000068,
+        0.745,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-017",
+      "parentId": "bookshelf",
+      "position": [
+        0.0029999999999992255,
+        0.745,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-018",
+      "parentId": "bookshelf",
+      "position": [
+        0.10799999999999921,
+        0.745,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-stack-001",
+      "parentId": "bookshelf",
+      "position": [
+        0.5800000000000001,
+        0.745,
+        0.16000000000000014
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-019",
+      "parentId": "bookshelf",
+      "position": [
+        -0.8300000000000001,
+        1.255,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-020",
+      "parentId": "bookshelf",
+      "position": [
+        -0.7250000000000001,
+        1.255,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-021",
+      "parentId": "bookshelf",
+      "position": [
+        -0.609,
+        1.255,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-022",
+      "parentId": "bookshelf",
+      "position": [
+        -0.4820000000000002,
+        1.255,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-023",
+      "parentId": "bookshelf",
+      "position": [
+        -0.3550000000000004,
+        1.255,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-024",
+      "parentId": "bookshelf",
+      "position": [
+        -0.22800000000000065,
+        1.255,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-025",
+      "parentId": "bookshelf",
+      "position": [
+        -0.09000000000000119,
+        1.255,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-026",
+      "parentId": "bookshelf",
+      "position": [
+        -0.8080000000000003,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-027",
+      "parentId": "bookshelf",
+      "position": [
+        -0.6590000000000003,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-028",
+      "parentId": "bookshelf",
+      "position": [
+        -0.4990000000000001,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-029",
+      "parentId": "bookshelf",
+      "position": [
+        -0.3280000000000003,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-030",
+      "parentId": "bookshelf",
+      "position": [
+        -0.15700000000000047,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-031",
+      "parentId": "bookshelf",
+      "position": [
+        0.013999999999999346,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-032",
+      "parentId": "bookshelf",
+      "position": [
+        0.15199999999999925,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-033",
+      "parentId": "bookshelf",
+      "position": [
+        0.25699999999999923,
+        1.765,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/crystal-001",
+      "parentId": "bookshelf",
+      "position": [
+        0.6400000000000001,
+        1.77,
+        0.18999999999999995
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/crystal-002",
+      "parentId": "bookshelf",
+      "position": [
+        0.8500000000000001,
+        1.77,
+        0.18999999999999995
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-034",
+      "parentId": "bookshelf",
+      "position": [
+        -0.8300000000000001,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-035",
+      "parentId": "bookshelf",
+      "position": [
+        -0.7250000000000001,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-036",
+      "parentId": "bookshelf",
+      "position": [
+        -0.6200000000000001,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-037",
+      "parentId": "bookshelf",
+      "position": [
+        -0.504,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-038",
+      "parentId": "bookshelf",
+      "position": [
+        -0.3769999999999998,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-039",
+      "parentId": "bookshelf",
+      "position": [
+        -0.25,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-040",
+      "parentId": "bookshelf",
+      "position": [
+        -0.12300000000000022,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-041",
+      "parentId": "bookshelf",
+      "position": [
+        0.014999999999999236,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-042",
+      "parentId": "bookshelf",
+      "position": [
+        0.16399999999999926,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-043",
+      "parentId": "bookshelf",
+      "position": [
+        0.3129999999999993,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/book-044",
+      "parentId": "bookshelf",
+      "position": [
+        0.4619999999999993,
+        2.2750000000000004,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/plant-001",
+      "parentId": "bookshelf",
+      "position": [
+        -0.81,
+        2.35,
+        0.16999999999999993
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/candle-001",
+      "parentId": "bookshelf",
+      "position": [
+        0.5,
+        2.27,
+        0.18000000000000016
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/ivy-001",
+      "parentId": "bookshelf",
+      "position": [
+        -0.9300000000000002,
+        2.37,
+        0.3200000000000003
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "bookshelf/ivy-002",
+      "parentId": "bookshelf",
+      "position": [
+        0.9299999999999999,
+        2.61,
+        0.26000000000000023
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "library-ladder",
+      "parentId": null,
+      "position": [
+        -2.69,
+        0,
+        -3.1
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk",
+      "parentId": null,
+      "position": [
+        0.7,
+        0,
+        -3.05
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "grimoire",
+      "parentId": "study-desk",
+      "position": [
+        0,
+        1.018,
+        0.05500000000000016
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk/bottle-001",
+      "parentId": "study-desk",
+      "position": [
+        -1.03,
+        1.013,
+        -0.20999999999999996
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk/bottle-002",
+      "parentId": "study-desk",
+      "position": [
+        -0.8500000000000001,
+        1.013,
+        -0.20999999999999996
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk/book-stack-001",
+      "parentId": "study-desk",
+      "position": [
+        -1.02,
+        1.013,
+        0.1599999999999997
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk/crystal-001",
+      "parentId": "study-desk",
+      "position": [
+        0.99,
+        1.013,
+        -0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk/candle-001",
+      "parentId": "study-desk",
+      "position": [
+        0.79,
+        1.013,
+        -0.2200000000000002
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk/candle-002",
+      "parentId": "study-desk",
+      "position": [
+        1.12,
+        1.013,
+        0.10999999999999988
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-notes",
+      "parentId": "study-desk",
+      "position": [
+        0.47,
+        1.02,
+        0.18999999999999995
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-chair",
+      "parentId": null,
+      "position": [
+        0.7,
+        0,
+        -2.22
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "study-desk/plant-001",
+      "parentId": "study-desk",
+      "position": [
+        -1.2,
+        1.014,
+        -0.26000000000000023
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "banner-left",
+      "parentId": null,
+      "position": [
+        -0.5,
+        2.09,
+        -4.08
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "banner-right",
+      "parentId": null,
+      "position": [
+        2,
+        2.09,
+        -4.08
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "cauldron",
+      "parentId": null,
+      "position": [
+        4.08,
+        1.25,
+        -2.81
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/candle-001",
+      "parentId": null,
+      "position": [
+        4.63,
+        1.23,
+        -3.27
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-low",
+      "parentId": null,
+      "position": [
+        2.94,
+        1.46,
+        -4
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-low/bottle-001",
+      "parentId": "alchemy-shelf-low",
+      "position": [
+        -0.3700000000000001,
+        0.040000000000000036,
+        0.040000000000000036
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-low/bottle-002",
+      "parentId": "alchemy-shelf-low",
+      "position": [
+        -0.07000000000000028,
+        0.040000000000000036,
+        0.040000000000000036
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-low/bottle-003",
+      "parentId": "alchemy-shelf-low",
+      "position": [
+        0.22999999999999998,
+        0.040000000000000036,
+        0.040000000000000036
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-high",
+      "parentId": null,
+      "position": [
+        2.94,
+        2.02,
+        -4
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-high/bottle-001",
+      "parentId": "alchemy-shelf-high",
+      "position": [
+        -0.3700000000000001,
+        0.040000000000000036,
+        0.040000000000000036
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-high/bottle-002",
+      "parentId": "alchemy-shelf-high",
+      "position": [
+        -0.07000000000000028,
+        0.040000000000000036,
+        0.040000000000000036
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-shelf-high/bottle-003",
+      "parentId": "alchemy-shelf-high",
+      "position": [
+        0.22999999999999998,
+        0.040000000000000036,
+        0.040000000000000036
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/plant-002",
+      "parentId": null,
+      "position": [
+        2.83,
+        0.037,
+        -3.58
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/ivy-001",
+      "parentId": null,
+      "position": [
+        2.42,
+        2.65,
+        -3.97
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "central-rug",
+      "parentId": null,
+      "position": [
+        0,
+        0,
+        0.36
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "storage",
+      "parentId": null,
+      "position": [
+        4.12,
+        0,
+        2.86
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "storage/plant-001",
+      "parentId": "storage",
+      "position": [
+        0.41999999999999993,
+        0.92,
+        -0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "storage/bottle-001",
+      "parentId": "storage",
+      "position": [
+        -0.3999999999999999,
+        0.92,
+        -0.009999999999999787
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "storage/book-stack-001",
+      "parentId": "storage",
+      "position": [
+        -0.16000000000000014,
+        0.92,
+        -0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "chest",
+      "parentId": null,
+      "position": [
+        -3.38,
+        0,
+        1.2
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "reading-chair",
+      "parentId": null,
+      "position": [
+        -3.85,
+        0,
+        2.78
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "side-table",
+      "parentId": null,
+      "position": [
+        -2.66,
+        0,
+        2.79
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "side-table/candle-001",
+      "parentId": "side-table",
+      "position": [
+        0,
+        0.57,
+        0
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/plant-003",
+      "parentId": null,
+      "position": [
+        -4.45,
+        0.032,
+        3.72
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/plant-004",
+      "parentId": null,
+      "position": [
+        4.65,
+        0.032,
+        1.65
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/plant-005",
+      "parentId": null,
+      "position": [
+        -1.13,
+        0.035,
+        -3.14
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/ivy-002",
+      "parentId": null,
+      "position": [
+        -4.95,
+        2.91,
+        -2.65
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/ivy-003",
+      "parentId": null,
+      "position": [
+        -4.95,
+        2.62,
+        -0.32
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "decor/ivy-004",
+      "parentId": null,
+      "position": [
+        -4.95,
+        2.53,
+        2.89
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "hanging-herbs-1",
+      "parentId": null,
+      "position": [
+        2.56,
+        2.5,
+        -3.96
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "hanging-herbs-2",
+      "parentId": null,
+      "position": [
+        2.71,
+        2.5,
+        -3.96
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "hanging-herbs-3",
+      "parentId": null,
+      "position": [
+        2.86,
+        2.5,
+        -3.96
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "hanging-herbs-4",
+      "parentId": null,
+      "position": [
+        3.01,
+        2.5,
+        -3.96
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "hanging-herbs-5",
+      "parentId": null,
+      "position": [
+        3.16,
+        2.5,
+        -3.96
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "floor-cushion",
+      "parentId": null,
+      "position": [
+        -1.38,
+        0,
+        1.47
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "herb-pot--4.22",
+      "parentId": null,
+      "position": [
+        -4.22,
+        0.038,
+        3.73
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "herb-pot-2.67",
+      "parentId": null,
+      "position": [
+        2.67,
+        0.038,
+        -2.65
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "herb-pot-4.54",
+      "parentId": "storage",
+      "position": [
+        0.41999999999999993,
+        0.96,
+        -0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf--4.24",
+      "parentId": null,
+      "position": [
+        -4.24,
+        1.64,
+        -3.92
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf--4.24/bottle-001",
+      "parentId": "wall-shelf--4.24",
+      "position": [
+        -0.23000000000000043,
+        0.040000000000000036,
+        0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf--4.24/bottle-002",
+      "parentId": "wall-shelf--4.24",
+      "position": [
+        0,
+        0.040000000000000036,
+        0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf--4.24/candle-001",
+      "parentId": "wall-shelf--4.24",
+      "position": [
+        0.23000000000000043,
+        0.040000000000000036,
+        0.04999999999999982
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf-2.68",
+      "parentId": null,
+      "position": [
+        2.68,
+        2.47,
+        -3.91
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf-2.68/bottle-001",
+      "parentId": "wall-shelf-2.68",
+      "position": [
+        -0.22999999999999998,
+        0.040000000000000036,
+        0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf-2.68/bottle-002",
+      "parentId": "wall-shelf-2.68",
+      "position": [
+        0,
+        0.040000000000000036,
+        0.06000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "wall-shelf-2.68/candle-001",
+      "parentId": "wall-shelf-2.68",
+      "position": [
+        0.22999999999999998,
+        0.040000000000000036,
+        0.04999999999999982
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "rolled-linen",
+      "parentId": "storage",
+      "position": [
+        -0.08999999999999986,
+        0.91,
+        -0.10999999999999988
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-bench",
+      "parentId": null,
+      "position": [
+        2.68,
+        0,
+        -2.65
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-bench/book-stack-001",
+      "parentId": "alchemy-bench",
+      "position": [
+        -0.33000000000000007,
+        0.32,
+        0.1499999999999999
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-bench/bottle-001",
+      "parentId": "alchemy-bench",
+      "position": [
+        0.23999999999999977,
+        0.32,
+        0.1599999999999997
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-bench/bottle-002",
+      "parentId": "alchemy-bench",
+      "position": [
+        0.16999999999999993,
+        0.98,
+        -0.31000000000000005
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-bench/bottle-003",
+      "parentId": "alchemy-bench",
+      "position": [
+        0.3799999999999999,
+        0.98,
+        -0.27
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "mortar",
+      "parentId": "alchemy-bench",
+      "position": [
+        -0.22999999999999998,
+        0.98,
+        0.17999999999999972
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-bench/notes-001",
+      "parentId": "alchemy-bench",
+      "position": [
+        0.23999999999999977,
+        0.986,
+        0.2599999999999998
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "alchemy-bench/crystal-001",
+      "parentId": "alchemy-bench",
+      "position": [
+        -0.40000000000000036,
+        0.98,
+        -0.29000000000000004
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    },
+    {
+      "id": "library-skull",
+      "parentId": "bookshelf",
+      "position": [
+        0.3799999999999999,
+        1.3,
+        0.28000000000000025
+      ],
+      "rotationY": 0,
+      "scale": 1,
+      "visible": true,
+      "deleted": false
+    }
+  ]
+}
