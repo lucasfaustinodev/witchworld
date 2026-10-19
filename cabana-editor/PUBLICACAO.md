@@ -1,11 +1,11 @@
-# Cabana R3F publicada na Vercel
+# Witch World — publicação principal
 
-Fonte: ChatGPT Sites, versão 14, commit d72d1713f4dd8095f54710380c51b8a3967cc8f5.
+URL principal: https://witchworld.vercel.app/
 
-URL: https://witchworld.vercel.app/cabana-editor/
+Esta entrega substitui a entrada antiga da página principal pela cabana R3F aprovada, com o editor e o layout atual. Não publica uma rota separada de cabana. A pasta cabana-editor organiza apenas o código-fonte.
 
-O Jardim existente continua na raiz. A cabana tem aplicação e Canvas próprios, sem integrar nem substituir o loop do Jardim.
+Fonte: ChatGPT Sites, versão 14, commit d72d1713f4dd8095f54710380c51b8a3967cc8f5. Os arquivos de runtime em dist são os mesmos do build aprovado, com URLs relativas de assets. O conteúdo anterior do Jardim permanece no histórico Git e os seus módulos continuam preservados; o index.html principal passa a carregar a aplicação aprovada da cabana.
 
-O código, os assets e os testes desta pasta correspondem à cabana aprovada. `build:publish` gera exclusivamente `../dist/cabana-editor`, usando base absoluta para os assets funcionarem com ou sem barra final na URL. A Vercel continua servindo o diretório `dist` sem instalar dependências na raiz.
+O script build:publish recompila a aplicação para o diretório dist da raiz do repositório. A configuração estática da Vercel é preservada. Esta publicação não implementa novos sistemas de gameplay nem a transição entre o Jardim e a cabana.
 
-Validação visual da cabana feita pelo usuário no Sites; QA WebGL da transferência para Vercel ainda deve ser conferido no navegador.
+55 testes, TypeScript e build aprovados na preparação. QA WebGL da publicação na Vercel ainda depende de conferência visual.
