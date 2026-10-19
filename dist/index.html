@@ -1,4 +1,22 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#0c101c"/><meta name="description" content="Editor isolado da cabana Witch World: móveis, objetos e layouts JSON sobre o Art Pass 1 hand-painted."/><title>Witch World · Editor da Cabana</title>  <script type="module" crossorigin src="./assets/index-Dc4dnXgi.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-D1Qktyix.css">
-</head><body><div id="root"></div></body></html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080e20">
+  <title>Jardim ritualístico — Bloco 4</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="scene" role="application" tabindex="0" aria-label="Diorama noturno de um jardim ritualístico: plataforma circular de pedra com pentagrama, cinco caveiras, uma bruxa procedural controlada por WASD ou setas, vegetação, lanternas e lago lateral. E perto do centro inicia a meditação e o ritual com levitação. E novamente encerra o ritual. Na margem do lago, E abre uma visão e E novamente a encerra. V entra e sai do Véu; WASD ou setas controlam a projeção astral enquanto o corpo permanece meditando."></main>
+  <p id="meditate-hint" hidden>E — Meditar</p>
+  <p id="status" role="status">Preparando o jardim…</p>
+  <script type="module">
+    import('./main.js').catch(error => {
+      document.querySelector('#status').textContent = 'Não foi possível renderizar. Abra por um servidor local e confira o suporte a WebGL 2 do navegador.';
+      console.error(error);
+    });
+  </script>
+</body>
+</html>
